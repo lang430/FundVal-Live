@@ -47,8 +47,13 @@ def init_db():
             email TEXT NOT NULL,
             threshold_up REAL,
             threshold_down REAL,
+            enable_digest INTEGER DEFAULT 0,
+            digest_time TEXT DEFAULT '14:45',
+            enable_volatility INTEGER DEFAULT 1,
             last_notified_at TIMESTAMP,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            last_digest_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(code, email)
         )
     """)
     

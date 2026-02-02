@@ -1,15 +1,10 @@
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, Body
+from typing import List, Dict, Any
 from ..services.ai import ai_service
 
 router = APIRouter()
 
-@router.post("/analyze")
-async def analyze_fund(data: dict = Body(...)):
-    """
-    Analyze fund based on provided info (id, name, estRate, etc.)
-    """
-    try:
-        result = await ai_service.analyze_fund(data)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@router.post("/ai/analyze_fund")
+async def analyze_fund(fund_info: Dict[str, Any] = Body(...)):
+    return await ai_service.analyze_fund(fund_info)
+

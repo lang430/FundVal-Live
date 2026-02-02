@@ -3,9 +3,19 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ..db import get_db_connection
-from .fund import get_combined_valuation
+from .fund import get_combined_valuation, MAJOR_CATEGORIES
 
 logger = logging.getLogger(__name__)
+
+def classify_fund_simple(name: str) -> str:
+    """
+    Fast classification based on name keywords.
+    """
+    for cat, keywords in MAJOR_CATEGORIES.items():
+        if any(kw in name for kw in keywords):
+            return cat
+    if "债" in name: return "债券"
+    return "混合/其他"
 
 def get_all_positions() -> Dict[str, Any]:
     """
@@ -92,6 +102,7 @@ def get_all_positions() -> Dict[str, Any]:
                 positions.append({
                     "code": code,
                     "name": name,
+                    "type": classify_fund_simple(name), # Add type here
                     "cost": cost,
                     "shares": shares,
                     "nav": nav,

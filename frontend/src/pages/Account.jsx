@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, Edit2, Trash2, RefreshCw } from 'lucide-react';
 import { getAccountPositions, updatePosition, deletePosition } from '../services/api';
 import { getRateColor } from '../components/StatCard';
+import { PortfolioChart } from '../components/PortfolioChart';
 
 const Account = ({ onSelectFund, onPositionChange, onSyncWatchlist }) => {
   const [data, setData] = useState({ summary: {}, positions: [] });
@@ -108,7 +109,12 @@ const Account = ({ onSelectFund, onPositionChange, onSyncWatchlist }) => {
         </div>
       </div>
 
-      {/* 2. Actions */}
+      {/* 2. Portfolio Visualization */}
+      <div className="w-full">
+        <PortfolioChart positions={positions} />
+      </div>
+
+      {/* 3. Actions */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-slate-800">持仓明细</h2>
         <div className="flex gap-2">

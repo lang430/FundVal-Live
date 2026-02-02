@@ -9,7 +9,7 @@ import { FundList } from './pages/FundList';
 import { FundDetail } from './pages/FundDetail';
 import Account from './pages/Account';
 import { SubscribeModal } from './components/SubscribeModal';
-import { searchFunds, getFundDetail } from './services/api';
+import { searchFunds, getFundDetail, getAccountPositions, subscribeFund } from './services/api';
 
 export default function App() {
   // --- State ---

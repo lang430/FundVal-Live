@@ -1,9 +1,11 @@
+import logging
 from fastapi import APIRouter, HTTPException, Query, Body
 from ..services.fund import search_funds, get_fund_intraday, get_fund_history
 from ..config import Config
 
 from ..services.subscription import add_subscription
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get("/search")
@@ -42,12 +44,23 @@ def subscribe_fund(fund_id: str, data: dict = Body(...)):
     email = data.get("email")
     up = data.get("thresholdUp")
     down = data.get("thresholdDown")
+    enable_digest = data.get("enableDailyDigest", False)
+    digest_time = data.get("digestTime", "14:45")
+    enable_volatility = data.get("enableVolatility", True)
     
     if not email:
         raise HTTPException(status_code=400, detail="Email required")
     
     try:
-        add_subscription(fund_id, email, float(up or 0), float(down or 0))
+        add_subscription(
+            fund_id, 
+            email, 
+            float(up or 0), 
+            float(down or 0),
+            enable_digest=enable_digest,
+            digest_time=digest_time,
+            enable_volatility=enable_volatility
+        )
         return {"status": "ok", "message": "Subscription active"}
     except Exception as e:
         logger.error(f"Subscription failed: {e}")
