@@ -4,6 +4,7 @@ import { StatCard } from '../components/StatCard';
 import { AiAnalysis } from '../components/AiAnalysis';
 import { HoldingsTable } from '../components/HoldingsTable';
 import { HistoryChart } from '../components/HistoryChart';
+import { IndicatorsCard } from '../components/IndicatorsCard';
 
 export const FundDetail = ({ fund, onSubscribe }) => {
   const [showHistory, setShowHistory] = useState(false);
@@ -72,10 +73,13 @@ export const FundDetail = ({ fund, onSubscribe }) => {
         </div>
       </div>
 
-      {/* 2. AI Analysis Section */}
+      {/* 2. New Indicators Card */}
+      <IndicatorsCard indicators={fund.indicators} />
+
+      {/* 3. AI Analysis Section */}
       <AiAnalysis fund={fund} />
 
-      {/* 3. Holdings */}
+      {/* 4. Holdings */}
       <HoldingsTable holdings={fund.holdings} />
 
     </div>

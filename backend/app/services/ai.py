@@ -1,14 +1,16 @@
 import os
 import re
 import datetime
-import requests
+import numpy as np
+import pandas as pd
 from typing import Optional, Dict, Any, List
 from duckduckgo_search import DDGS
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from ..config import Config
+from .prompts import LINUS_FINANCIAL_ANALYSIS_PROMPT
+from .fund import get_fund_history
 
 class AIService:
     def __init__(self):
@@ -26,87 +28,105 @@ class AIService:
             model=model,
             openai_api_key=api_key,
             openai_api_base=api_base,
-            temperature=0.2,
+            temperature=0.3, # Linus needs to be sharp, not creative
             request_timeout=60 if fast_mode else 120
         )
 
     def search_news(self, query: str) -> str:
         try:
+            # Simple wrapper to fetch news
             ddgs = DDGS(verify=False)
             results = ddgs.text(
                 keywords=query,
                 region="cn-zh",
                 safesearch="off",
-                timelimit="w",
+                timelimit="w", # last week
                 max_results=5,
             )
             
             if not results:
-                return ""
+                return "暂无相关近期新闻。"
             
-            output = f"【{query}】相关新闻：\n"
+            output = ""
             for i, res in enumerate(results, 1):
                 output += f"{i}. {res.get('title')} - {res.get('body')}\n"
             return output
         except Exception as e:
             print(f"Search error: {e}")
-            return ""
+            return "新闻搜索服务暂时不可用。"
+
+    def _calculate_indicators(self, history: List[Dict[str, Any]]) -> Dict[str, str]:
+        """
+        Calculate simple technical indicators based on recent history.
+        """
+        if not history or len(history) < 5:
+            return {"status": "数据不足", "desc": "新基金或数据缺失"}
+            
+        navs = [item['nav'] for item in history]
+        current_nav = navs[-1]
+        max_nav = max(navs)
+        min_nav = min(navs)
+        avg_nav = sum(navs) / len(navs)
+        
+        # Position in range
+        position = (current_nav - min_nav) / (max_nav - min_nav) if max_nav > min_nav else 0.5
+        
+        status = "正常"
+        if position > 0.9: status = "高位"
+        elif position < 0.1: status = "低位"
+        elif current_nav > avg_nav * 1.05: status = "偏高"
+        elif current_nav < avg_nav * 0.95: status = "偏低"
+        
+        return {
+            "status": status,
+            "desc": f"近30日最高{max_nav:.4f}, 最低{min_nav:.4f}, 现价处于{'高位' if position>0.8 else '低位' if position<0.2 else '中位'}区间 ({int(position*100)}%)"
+        }
 
     async def analyze_fund(self, fund_info: Dict[str, Any]) -> Dict[str, Any]:
         if not self.llm:
             return {
                 "summary": "未配置 LLM API Key，无法进行分析。",
-                "risk": "未知",
-                "sector": "未知",
+                "risk_level": "未知",
+                "analysis_report": "请在后台配置 .env 文件以启用 AI 分析功能。",
                 "timestamp": datetime.datetime.now().strftime("%H:%M:%S")
             }
 
+        fund_id = fund_info.get("id")
         fund_name = fund_info.get("name", "未知基金")
-        est_rate = fund_info.get("estRate", 0.0)
         
-        # Simple sector heuristic from name
-        sector_context = ""
-        for k, v in {
-            "科技": ["半导体", "电子", "计算机", "AI", "通信"],
-            "消费": ["酒", "饮料", "食品", "消费"],
-            "医药": ["医", "药", "生物"],
-            "新能源": ["光伏", "电池", "新能源", "车"],
-            "金融": ["银行", "证券", "保险"]
-        }.items():
-            if any(kw in fund_name for kw in v):
-                sector_context = k
-                break
+        # 1. Gather Data
+        # History (Last 30 days)
+        history = get_fund_history(fund_id, limit=30)
+        indicators = self._calculate_indicators(history)
         
-        # Search news if we have a sector or fund name
-        news_context = ""
-        if sector_context:
-            news_context = self.search_news(f"{sector_context}行业 最新消息")
-        else:
-            news_context = self.search_news(f"{fund_name} 基金")
+        history_summary = "暂无历史数据"
+        if history:
+            history_summary = f"近30日走势: 起始{history[0]['nav']} -> 结束{history[-1]['nav']}. {indicators['desc']}"
 
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", "你是一位资深基金分析师。请根据提供的基金数据和市场新闻，生成一份简短的实时估值解读。"),
-            ("user", f"""
-            基金名称：{fund_name}
-            今日实时估值涨跌：{est_rate}%
-            所属/相关板块：{sector_context}
-            
-            相关市场新闻：
-            {news_context}
-            
-            请输出 JSON 格式，包含三个字段：
-            1. summary: 走势解读（50字以内，结合估值和新闻）
-            2. sector: 板块影响（30字以内）
-            3. risk: 风险等级（低/中/高，并简述原因）
-            """)
-        ])
+        # Valuation
+        valuation_data = f"实时估值: {fund_info.get('estimate', 'N/A')}, 估算涨跌: {fund_info.get('estRate', '0')}%"
+        
+        # Prepare Fund Info Summary (Exclude detailed holdings to focus AI on Fund level)
+        fund_summary = {
+            "id": fund_id,
+            "name": fund_name,
+            "type": fund_info.get("type"),
+            "manager": fund_info.get("manager"),
+            "latest_nav": fund_info.get("nav"),
+            "update_time": fund_info.get("time")
+        }
 
-        chain = prompt | self.llm | StrOutputParser()
+        # 2. Invoke LLM with Linus Prompt
+        chain = LINUS_FINANCIAL_ANALYSIS_PROMPT | self.llm | StrOutputParser()
         
         try:
-            raw_result = await chain.ainvoke({})
+            raw_result = await chain.ainvoke({
+                "fund_info": str(fund_summary),
+                "history_summary": history_summary,
+                "valuation_data": valuation_data
+            })
             
-            # Naive JSON extraction if LLM outputs markdown code block
+            # 3. Parse Result
             clean_json = raw_result.strip()
             if "```json" in clean_json:
                 clean_json = clean_json.split("```json")[1].split("```")[0]
@@ -115,14 +135,20 @@ class AIService:
             
             import json
             result = json.loads(clean_json)
+            
+            # Enrich with indicators for frontend display
+            result["indicators"] = indicators
             result["timestamp"] = datetime.datetime.now().strftime("%H:%M:%S")
+            
             return result
+            
         except Exception as e:
             print(f"AI Analysis Error: {e}")
             return {
-                "summary": f"分析生成失败: {str(e)}",
-                "risk": "未知",
-                "sector": "未知",
+                "summary": "分析生成失败",
+                "risk_level": "未知",
+                "analysis_report": f"LLM 调用或解析失败: {str(e)}",
+                "indicators": indicators,
                 "timestamp": datetime.datetime.now().strftime("%H:%M:%S")
             }
 

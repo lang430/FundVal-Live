@@ -5,7 +5,10 @@ import { StatCard, getRateColor } from './StatCard';
 export const FundCard = ({ fund, onClick, onRemove, onSubscribe }) => {
   return (
     <div 
-      onClick={() => onClick(fund.id)}
+      onClick={() => {
+        console.log("Card clicked:", fund.id);
+        onClick(fund.id);
+      }}
       className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer relative overflow-hidden group"
     >
       {/* Card Header */}

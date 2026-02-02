@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Activity, Filter, ArrowUpDown } from 'lucide-react';
 import { FundCard } from '../components/FundCard';
 
-const SECTORS = ["全部", "科技", "消费", "医药", "金融", "新能源", "材料"];
+const SECTORS = ["全部", "科技", "消费", "医药", "金融", "新能源", "材料", "QDII", "债券"];
 
 export const FundList = ({ watchlist, setWatchlist, onSelectFund, onSubscribe, onRemove }) => {
   const [filterSector, setFilterSector] = useState("全部");

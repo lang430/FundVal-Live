@@ -38,7 +38,9 @@ MAJOR_CATEGORIES = {
     "环保": ["环保", "环保设备", "环境治理", "垃圾分类", "碳中和", "可控核聚变", "液冷"],
     "传媒": ["传媒", "游戏", "影视", "元宇宙", "超清视频", "数字孪生"],
     "主题": ["国企改革", "一带一路", "中特估", "中字头", "并购重组", "华为", "新兴产业",
-             "国家安防", "安全主题", "农牧主题", "农林牧渔", "养殖业", "猪肉", "高端装备"]
+             "国家安防", "安全主题", "农牧主题", "农林牧渔", "养殖业", "猪肉", "高端装备"],
+    "QDII": ["QDII", "全球", "纳斯达克", "标普", "美国", "德国", "日本", "越南", "印度", "海外", "恒生", "港股", "H股"],
+    "债券": ["债", "纯债", "固收", "短债", "中短债", "长债", "国债"]
 }
 
 
@@ -47,11 +49,16 @@ def get_eastmoney_valuation(code: str) -> Dict[str, Any]:
     Fetch real-time valuation from Tiantian Jijin (Eastmoney) API.
     """
     url = f"http://fundgz.1234567.com.cn/js/{code}.js?rt={int(time.time()*1000)}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36)"
+    }
     try:
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             text = response.text
-            match = re.search(r"jsonpgz\((.*)\);", text)
+            # Regex to capture JSON content inside jsonpgz(...)
+            # Allow optional semicolon at end
+            match = re.search(r"jsonpgz\((.*)\)", text)
             if match and match.group(1):
                 data = json.loads(match.group(1))
                 return {
@@ -69,23 +76,24 @@ def get_eastmoney_valuation(code: str) -> Dict[str, Any]:
 def get_sina_valuation(code: str) -> Dict[str, Any]:
     """
     Backup source: Sina Fund API.
+    Format: Name, Time, Estimate, NAV, ..., Rate, Date
     """
     url = f"http://hq.sinajs.cn/list=fu_{code}"
     headers = {"Referer": "http://finance.sina.com.cn"}
     try:
         response = requests.get(url, headers=headers, timeout=5)
         text = response.text
-        # var hq_str_fu_005827="3.1230,3.1450,2021-07-01 15:00:00,0.704";
-        # 0: last nav, 1: estimated price, 2: time, 3: estimated rate
+        # var hq_str_fu_005827="Name,15:00:00,1.234,1.230,...";
         match = re.search(r'="(.*)"', text)
         if match and match.group(1):
             parts = match.group(1).split(',')
-            if len(parts) >= 4:
+            if len(parts) >= 8:
                 return {
-                    "nav": float(parts[0]),
-                    "estimate": float(parts[1]),
-                    "estRate": float(parts[3]),
-                    "time": parts[2]
+                    # parts[0] is name (GBK), often garbled in utf-8 env, ignore it
+                    "estimate": float(parts[2]),
+                    "nav": float(parts[3]),
+                    "estRate": float(parts[6]),
+                    "time": f"{parts[7]} {parts[1]}"
                 }
     except Exception as e:
         print(f"Sina Valuation API error for {code}: {e}")
@@ -165,6 +173,42 @@ def get_eastmoney_pingzhong_data(code: str) -> Dict[str, Any]:
                         data["manager"] = ", ".join([m["name"] for m in managers])
                 except:
                     pass
+
+            # Extract Performance Metrics
+            for key in ["syl_1n", "syl_6y", "syl_3y", "syl_1y"]:
+                m = re.search(rf'{key}\s*=\s*"(.*?)";', text)
+                if m: data[key] = m.group(1)
+
+            # Extract Performance Evaluation (Capability Scores)
+            # var Data_performanceEvaluation = {"avr":"72.25","categories":[...],"data":[80.0,70.0...]};
+            # Match until `};`
+            perf_match = re.search(r'Data_performanceEvaluation\s*=\s*(\{.+?\})\s*;\s*/\*', text)
+            if perf_match:
+                try:
+                    perf = json.loads(perf_match.group(1))
+                    if perf and "data" in perf and "categories" in perf:
+                        data["performance"] = dict(zip(perf["categories"], perf["data"]))
+                except:
+                    pass
+
+            # Extract Full History (Data_netWorthTrend)
+            # var Data_netWorthTrend = [{"x":1536076800000,"y":1.0,...},...];
+            history_match = re.search(r'Data_netWorthTrend\s*=\s*(\[.+?\])\s*;\s*/\*', text)
+            if history_match:
+                try:
+                    raw_hist = json.loads(history_match.group(1))
+                    # Convert to standard format: [{"date": "YYYY-MM-DD", "nav": 1.23}, ...]
+                    # x is ms timestamp
+                    data["history"] = [
+                        {
+                            "date": time.strftime('%Y-%m-%d', time.localtime(item['x']/1000)),
+                            "nav": float(item['y'])
+                        }
+                        for item in raw_hist
+                    ]
+                except:
+                    pass
+
             return data
     except Exception as e:
         print(f"PingZhong API error for {code}: {e}")
@@ -198,7 +242,7 @@ def _fetch_stock_spots_sina(codes: List[str]) -> Dict[str, float]:
     
     formatted = []
     # Map cleaned code back to original for result dict
-    code_map = {}
+    code_map = {} 
     
     for c in codes:
         if not c: continue
@@ -276,6 +320,7 @@ def _fetch_stock_spots_sina(codes: List[str]) -> Dict[str, float]:
         print(f"Sina fetch failed: {e}")
         return {}
 
+
 def get_fund_history(code: str, limit: int = 30) -> List[Dict[str, Any]]:
     """
     Get historical NAV data.
@@ -298,6 +343,60 @@ def get_fund_history(code: str, limit: int = 30) -> List[Dict[str, Any]]:
         return []
 
 
+def _calculate_technical_indicators(history: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Calculate real technical indicators from NAV history.
+    """
+    if not history or len(history) < 10:
+        return {
+            "sharpe": "--",
+            "volatility": "--",
+            "max_drawdown": "--",
+            "annual_return": "--"
+        }
+    
+    try:
+        import numpy as np
+        # Convert to numpy array of NAVs
+        navs = np.array([item['nav'] for item in history])
+        
+        # 1. Returns (Daily)
+        daily_returns = np.diff(navs) / navs[:-1]
+        
+        # 2. Annualized Return
+        total_return = (navs[-1] - navs[0]) / navs[0]
+        # Approximate years based on history length
+        years = len(history) / 250.0
+        annual_return = (1 + total_return)**(1/years) - 1 if years > 0 else 0
+        
+        # 3. Annualized Volatility
+        volatility = np.std(daily_returns) * np.sqrt(250)
+        
+        # 4. Sharpe Ratio (Risk-free rate = 2%)
+        rf = 0.02
+        sharpe = (annual_return - rf) / volatility if volatility > 0 else 0
+        
+        # 5. Max Drawdown
+        # Running max
+        rolling_max = np.maximum.accumulate(navs)
+        drawdowns = (navs - rolling_max) / rolling_max
+        max_drawdown = np.min(drawdowns)
+        
+        return {
+            "sharpe": round(float(sharpe), 2),
+            "volatility": f"{round(float(volatility) * 100, 2)}%",
+            "max_drawdown": f"{round(float(max_drawdown) * 100, 2)}%",
+            "annual_return": f"{round(float(annual_return) * 100, 2)}%"
+        }
+    except Exception as e:
+        print(f"Indicator calculation error: {e}")
+        return {
+            "sharpe": "--",
+            "volatility": "--",
+            "max_drawdown": "--",
+            "annual_return": "--"
+        }
+
 def get_fund_intraday(code: str) -> Dict[str, Any]:
     """
     Get fund holdings + real-time valuation estimate.
@@ -316,6 +415,8 @@ def get_fund_intraday(code: str) -> Dict[str, Any]:
     extra_info = {}
     if pz_data.get("name"): extra_info["full_name"] = pz_data["name"]
     if pz_data.get("manager"): extra_info["manager"] = pz_data["manager"]
+    for k in ["syl_1n", "syl_6y", "syl_3y", "syl_1y"]:
+        if pz_data.get(k): extra_info[k] = pz_data[k]
     
     db_info = _get_fund_info_from_db(code)
     if db_info:
@@ -326,19 +427,28 @@ def get_fund_intraday(code: str) -> Dict[str, Any]:
         name = extra_info.get("full_name", f"基金 {code}")
     manager = extra_info.get("manager", "--")
 
-    # 2) Get holdings from AkShare
+    # 2) Use history from PingZhong for Indicators
+    # We take last 250 trading days (approx 1 year)
+    history_data = pz_data.get("history", [])
+    if history_data:
+        # Indicators need 1 year
+        tech_indicators = _calculate_technical_indicators(history_data[-250:])
+    else:
+        # Fallback to AkShare if PingZhong missed it (unlikely)
+        history_data = get_fund_history(code, limit=250)
+        tech_indicators = _calculate_technical_indicators(history_data)
+
+    # 3) Get holdings from AkShare
     holdings = []
+    concentration_rate = 0.0
     try:
         current_year = str(time.localtime().tm_year)
         holdings_df = ak.fund_portfolio_hold_em(symbol=code, date=current_year)
         if holdings_df is None or holdings_df.empty:
              prev_year = str(time.localtime().tm_year - 1)
              holdings_df = ak.fund_portfolio_hold_em(symbol=code, date=prev_year)
-    except Exception:
-        holdings_df = pd.DataFrame()
-
-    if not holdings_df.empty:
-        try:
+             
+        if not holdings_df.empty:
             holdings_df = holdings_df.copy()
             if "占净值比例" in holdings_df.columns:
                 holdings_df["占净值比例"] = (
@@ -346,19 +456,27 @@ def get_fund_intraday(code: str) -> Dict[str, Any]:
                 )
                 holdings_df["占净值比例"] = pd.to_numeric(holdings_df["占净值比例"], errors="coerce").fillna(0.0)
             
-            # Batch fetch stock prices
+            sorted_holdings = holdings_df.sort_values(by="占净值比例", ascending=False)
+            top10 = sorted_holdings.head(10)
+            concentration_rate = top10["占净值比例"].sum()
+
             stock_codes = [str(c) for c in holdings_df["股票代码"].tolist() if c]
             spot_map = _fetch_stock_spots_sina(stock_codes)
             
-            for _, row in holdings_df.iterrows():
+            seen_codes = set()
+            for _, row in sorted_holdings.iterrows():
                 stock_code = str(row.get("股票代码"))
+                percent = float(row.get("占净值比例", 0.0))
+                if stock_code in seen_codes or percent < 0.01: continue
+                seen_codes.add(stock_code)
                 holdings.append({
                     "name": row.get("股票名称"),
-                    "percent": float(row.get("占净值比例", 0.0)),
+                    "percent": percent,
                     "change": spot_map.get(stock_code, 0.0), 
                 })
-        except Exception as e:
-            print(f"Holdings processing error: {e}")
+            holdings = holdings[:20]
+    except:
+        pass
 
     # 4) Determine sector/type
     sector = "未知"
@@ -384,5 +502,15 @@ def get_fund_intraday(code: str) -> Dict[str, Any]:
         "estRate": est_rate,
         "time": update_time,
         "holdings": holdings,
+        "indicators": {
+            "returns": {
+                "1M": extra_info.get("syl_1y", "--"),
+                "3M": extra_info.get("syl_3y", "--"),
+                "6M": extra_info.get("syl_6y", "--"),
+                "1Y": extra_info.get("syl_1n", "--")
+            },
+            "concentration": round(concentration_rate, 2),
+            "technical": tech_indicators
+        }
     }
     return response
