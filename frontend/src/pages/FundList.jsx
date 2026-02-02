@@ -1,68 +1,85 @@
-import React, { useState } from 'react';
-import { Search, Activity } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, Activity, Filter, ArrowUpDown } from 'lucide-react';
 import { FundCard } from '../components/FundCard';
-import { searchFunds, getFundDetail } from '../services/api';
+
+const SECTORS = ["全部", "科技", "消费", "医药", "金融", "新能源", "材料"];
 
 export const FundList = ({ watchlist, setWatchlist, onSelectFund, onSubscribe, onRemove }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
+  const [filterSector, setFilterSector] = useState("全部");
+  const [sortType, setSortType] = useState("default"); // default, rate_desc, rate_asc
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery) return;
-    setLoading(true);
-    setSearchResults([]);
-    
-    try {
-        const results = await searchFunds(searchQuery);
-        // Only take top 5 to keep UI clean or show in a dropdown
-        // For this UI, let's just add the first one directly for simplicity as per original mock flow,
-        // OR better: show a result list. 
-        // Following original 'add' flow:
-        if (results && results.length > 0) {
-           const fundMeta = results[0];
-           // Fetch initial detail to get nav/est
-           const detail = await getFundDetail(fundMeta.id);
-           // Merge meta + detail
-           const newFund = { ...fundMeta, ...detail, trusted: true };
-           
-           // Avoid duplicates
-           if (!watchlist.find(f => f.id === newFund.id)) {
-                setWatchlist(prev => [...prev, newFund]);
-           }
-           setSearchQuery('');
-        } else {
-            alert('未找到相关基金');
-        }
-    } catch (err) {
-        alert('查询失败，请重试');
-    } finally {
-        setLoading(false);
+  // Process list
+  const processedList = useMemo(() => {
+    let result = [...watchlist];
+
+    // 1. Filter
+    if (filterSector !== "全部") {
+        // Simple heuristic: check if fund type or name contains sector keyword
+        // Since backend already provides 'type', we can use it.
+        result = result.filter(f => {
+            const typeMatch = f.type && f.type.includes(filterSector);
+            // Fallback to name match if type is generic like '混合型'
+            const nameMatch = f.name && f.name.includes(filterSector); 
+            // Better: backend maps sector to specific keys.
+            // For now, simple includes is enough for MVP.
+            return typeMatch || nameMatch;
+        });
     }
-  };
+
+    // 2. Sort
+    if (sortType === "rate_desc") {
+        result.sort((a, b) => (b.estRate || 0) - (a.estRate || 0));
+    } else if (sortType === "rate_asc") {
+        result.sort((a, b) => (a.estRate || 0) - (b.estRate || 0));
+    }
+
+    return result;
+  }, [watchlist, filterSector, sortType]);
 
   return (
     <>
-      <div className="md:hidden flex justify-between items-center mb-4 text-xs text-slate-500 px-1">
-        <span>我的关注 ({watchlist.length})</span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          实时更新中
-        </span>
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        {/* Header / Stats */}
+        <div className="text-xs text-slate-500 px-1">
+          <span className="font-bold text-slate-700 text-sm">我的关注 ({watchlist.length})</span>
+          <span className="ml-3 inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            实时更新
+          </span>
+        </div>
+
+        {/* Controls */}
+        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {/* Sector Filter */}
+            <div className="flex bg-white border border-slate-200 rounded-lg p-1">
+                {SECTORS.map(s => (
+                    <button
+                        key={s}
+                        onClick={() => setFilterSector(s)}
+                        className={`px-3 py-1 text-xs rounded-md transition-colors whitespace-nowrap ${
+                            filterSector === s 
+                            ? 'bg-blue-100 text-blue-700 font-medium' 
+                            : 'text-slate-500 hover:bg-slate-50'
+                        }`}
+                    >
+                        {s}
+                    </button>
+                ))}
+            </div>
+
+            {/* Sort Toggle */}
+            <button 
+                onClick={() => setSortType(prev => prev === 'rate_desc' ? 'rate_asc' : 'rate_desc')}
+                className="flex items-center gap-1 bg-white border border-slate-200 text-slate-600 px-3 py-1 rounded-lg text-xs hover:bg-slate-50 transition-colors whitespace-nowrap"
+            >
+                <ArrowUpDown className="w-3 h-3" />
+                {sortType === 'default' ? '排序' : sortType === 'rate_desc' ? '涨幅 ↓' : '涨幅 ↑'}
+            </button>
+        </div>
       </div>
 
-      {/* Search Bar - Mobile/Inline placement if needed, but header has one. 
-          The header search logic is currently passed down or handled in App. 
-          Let's assume this component renders the MAIN content area. 
-          The Header search input should ideally lift state up to App or be here.
-          For now, we'll keep the input in Header (App.jsx) and this page just displays the list.
-          Wait, looking at original design, search was in Header. 
-          We'll need to coordinate that.
-       */}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {watchlist.map((fund) => (
+        {processedList.map((fund) => (
           <FundCard 
             key={fund.id} 
             fund={fund} 
@@ -77,6 +94,13 @@ export const FundList = ({ watchlist, setWatchlist, onSelectFund, onSubscribe, o
             <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>暂无关注基金，请在上方搜索添加代码</p>
           </div>
+        )}
+        
+        {watchlist.length > 0 && processedList.length === 0 && (
+             <div className="col-span-1 md:col-span-2 py-12 text-center text-slate-400">
+                <p>没有找到匹配板块的基金</p>
+                <button onClick={() => setFilterSector("全部")} className="text-blue-600 text-xs mt-2 hover:underline">清除筛选</button>
+             </div>
         )}
       </div>
     </>

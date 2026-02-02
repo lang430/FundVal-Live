@@ -105,8 +105,6 @@ class AIService:
         
         try:
             raw_result = await chain.ainvoke({})
-            # Debug log
-            print(f"LLM Raw Output: {raw_result}")
             
             # Naive JSON extraction if LLM outputs markdown code block
             clean_json = raw_result.strip()

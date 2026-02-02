@@ -30,7 +30,7 @@ MAJOR_CATEGORIES = {
                  "通用设备", "自动化设备", "机器人", "人形机器人", "汽车零部件", "汽车服务",
                  "汽车热管理", "尾气治理", "特斯拉", "无人驾驶", "智能驾驶", "电网设备", "电机",
                  "高端制造", "工业4.0", "工业互联", "低空经济", "通用航空"],
-    "材料": ["有色金属", "黄金股", "贵金属", "基础化工", "钢铁", "建筑材料", "稀土永磁", "小金属",
+    "材料": ["有色金属", "黄金", "黄金股", "贵金属", "基础化工", "钢铁", "建筑材料", "稀土永磁", "小金属",
              "工业金属", "材料", "大宗商品", "资源"],
     "军工": ["国防军工", "航天装备", "航空装备", "航海装备", "军工电子", "军民融合", "商业航天",
              "卫星互联网", "航母", "航空机场"],
@@ -42,42 +42,78 @@ MAJOR_CATEGORIES = {
 }
 
 
-def _df_to_records(df: pd.DataFrame) -> List[Dict[str, Any]]:
-    if df is None or df.empty:
-        return []
-    return df.where(pd.notnull(df), None).to_dict(orient="records")
-
-
 def get_eastmoney_valuation(code: str) -> Dict[str, Any]:
     """
     Fetch real-time valuation from Tiantian Jijin (Eastmoney) API.
-    Returns: {name, jzrq, dwjz, gsz, gszzl, gztime}
     """
     url = f"http://fundgz.1234567.com.cn/js/{code}.js?rt={int(time.time()*1000)}"
     try:
         response = requests.get(url, timeout=5)
         if response.status_code == 200:
             text = response.text
-            # Extract JSON from jsonpgz(...)
             match = re.search(r"jsonpgz\((.*)\);", text)
-            if match:
-                return json.loads(match.group(1))
+            if match and match.group(1):
+                data = json.loads(match.group(1))
+                return {
+                    "name": data.get("name"),
+                    "nav": float(data.get("dwjz", 0.0)),
+                    "estimate": float(data.get("gsz", 0.0)),
+                    "estRate": float(data.get("gszzl", 0.0)),
+                    "time": data.get("gztime")
+                }
     except Exception as e:
         print(f"Eastmoney API error for {code}: {e}")
     return {}
 
 
+def get_sina_valuation(code: str) -> Dict[str, Any]:
+    """
+    Backup source: Sina Fund API.
+    """
+    url = f"http://hq.sinajs.cn/list=fu_{code}"
+    headers = {"Referer": "http://finance.sina.com.cn"}
+    try:
+        response = requests.get(url, headers=headers, timeout=5)
+        text = response.text
+        # var hq_str_fu_005827="3.1230,3.1450,2021-07-01 15:00:00,0.704";
+        # 0: last nav, 1: estimated price, 2: time, 3: estimated rate
+        match = re.search(r'="(.*)"', text)
+        if match and match.group(1):
+            parts = match.group(1).split(',')
+            if len(parts) >= 4:
+                return {
+                    "nav": float(parts[0]),
+                    "estimate": float(parts[1]),
+                    "estRate": float(parts[3]),
+                    "time": parts[2]
+                }
+    except Exception as e:
+        print(f"Sina Valuation API error for {code}: {e}")
+    return {}
+
+
+def get_combined_valuation(code: str) -> Dict[str, Any]:
+    """
+    Try Eastmoney first, fallback to Sina.
+    """
+    data = get_eastmoney_valuation(code)
+    if not data or data.get("estimate") == 0.0:
+        # Fallback to Sina
+        sina_data = get_sina_valuation(code)
+        if sina_data:
+            # Merge Sina info into Eastmoney structure
+            data.update(sina_data)
+    return data
+
+
 def search_funds(q: str) -> List[Dict[str, Any]]:
     """
     Search funds by keyword using local SQLite DB.
-    Fast, cached, and doesn't kill the server.
     """
     if not q:
         return []
 
     q_clean = q.strip()
-    # Simple SQL injection protection is handled by parameter substitution usually,
-    # but for LIKE with wildcards we construct the pattern.
     pattern = f"%{q_clean}%"
     
     conn = get_db_connection()
@@ -105,50 +141,151 @@ def search_funds(q: str) -> List[Dict[str, Any]]:
         conn.close()
 
 
-# Global cache for stock spot data
-_STOCK_SPOT_CACHE = {
-    "data": {},
-    "timestamp": 0
-}
+def get_eastmoney_pingzhong_data(code: str) -> Dict[str, Any]:
+    """
+    Fetch static detailed data from Eastmoney (PingZhongData).
+    """
+    url = Config.EASTMONEY_DETAILED_API_URL.format(code=code)
+    try:
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            text = response.text
+            data = {}
+            name_match = re.search(r'fS_name\s*=\s*"(.*?)";', text)
+            if name_match: data["name"] = name_match.group(1)
+            
+            code_match = re.search(r'fS_code\s*=\s*"(.*?)";', text)
+            if code_match: data["code"] = code_match.group(1)
+            
+            manager_match = re.search(r'Data_currentFundManager\s*=\s*(\[.+?\])\s*;\s*/\*', text)
+            if manager_match:
+                try:
+                    managers = json.loads(manager_match.group(1))
+                    if managers:
+                        data["manager"] = ", ".join([m["name"] for m in managers])
+                except:
+                    pass
+            return data
+    except Exception as e:
+        print(f"PingZhong API error for {code}: {e}")
+    return {}
 
-def _get_cached_stock_spot() -> Dict[str, float]:
+
+def _get_fund_info_from_db(code: str) -> Dict[str, Any]:
     """
-    Get stock spot data with simple in-memory caching.
-    TTL: defined in Config (60s).
+    Get fund basic info from local SQLite cache.
     """
-    now = time.time()
-    if now - _STOCK_SPOT_CACHE["timestamp"] < Config.STOCK_SPOT_CACHE_DURATION:
-        return _STOCK_SPOT_CACHE["data"]
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, type FROM funds WHERE code = ?", (code,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {"name": row["name"], "type": row["type"]}
+    except Exception as e:
+        print(f"DB fetch error for {code}: {e}")
+    return {}
+
+
+def _fetch_stock_spots_sina(codes: List[str]) -> Dict[str, float]:
+    """
+    Fetch real-time stock prices from Sina API in batch.
+    Supports A-share (sh/sz), HK (hk), US (gb_).
+    """
+    if not codes:
+        return {}
+    
+    formatted = []
+    # Map cleaned code back to original for result dict
+    code_map = {}
+    
+    for c in codes:
+        if not c: continue
+        c_str = str(c).strip()
+        prefix = ""
+        clean_c = c_str
+        
+        # Detect Market
+        if c_str.isdigit():
+            if len(c_str) == 6:
+                # A-share
+                prefix = "sh" if c_str.startswith(('60', '68', '90', '11')) else "sz"
+            elif len(c_str) == 5:
+                # HK
+                prefix = "hk"
+        elif c_str.isalpha():
+            # US
+            prefix = "gb_"
+            clean_c = c_str.lower()
+        
+        if prefix:
+            sina_code = f"{prefix}{clean_c}"
+            formatted.append(sina_code)
+            code_map[sina_code] = c_str
+            
+    if not formatted:
+        return {}
+
+    url = f"http://hq.sinajs.cn/list={','.join(formatted)}"
+    headers = {"Referer": "http://finance.sina.com.cn"}
     
     try:
-        # Still heavy, but limited to once per minute per server instance.
-        # This is acceptable for a single-worker MVP.
-        spot_df = ak.stock_zh_a_spot_em()
-        spot_map = {str(r["代码"]): float(r["涨跌幅"]) for _, r in spot_df.iterrows() if "涨跌幅" in spot_df.columns}
-        _STOCK_SPOT_CACHE["data"] = spot_map
-        _STOCK_SPOT_CACHE["timestamp"] = now
-        return spot_map
-    except Exception as e:
-        print(f"Failed to refresh stock spot cache: {e}")
-        return _STOCK_SPOT_CACHE["data"] # Return old data if fetch fails
+        response = requests.get(url, headers=headers, timeout=5)
+        results = {}
+        for line in response.text.strip().split('\n'):
+            if not line or '=' not in line or '"' not in line: continue
+            
+            # var hq_str_sh600519="..."
+            line_key = line.split('=')[0].split('_str_')[-1] # sh600519 or hk00700 or gb_nvda
+            original_code = code_map.get(line_key)
+            if not original_code: continue
 
+            data_part = line.split('"')[1]
+            if not data_part: continue
+            parts = data_part.split(',')
+            
+            change = 0.0
+            try:
+                if line_key.startswith("gb_"):
+                    # US: name, price, change_percent, ...
+                    # Example: "英伟达,135.20,2.55,..."
+                    if len(parts) > 2:
+                        change = float(parts[2])
+                elif line_key.startswith("hk"):
+                    # HK: en, ch, open, prev_close, high, low, last, ...
+                    if len(parts) > 6:
+                        prev_close = float(parts[3])
+                        last = float(parts[6])
+                        if prev_close > 0:
+                            change = round((last - prev_close) / prev_close * 100, 2)
+                else:
+                    # A-share: name, open, prev_close, last, ...
+                    if len(parts) > 3:
+                        prev_close = float(parts[2])
+                        last = float(parts[3])
+                        if prev_close > 0:
+                            change = round((last - prev_close) / prev_close * 100, 2)
+                
+                results[original_code] = change
+            except:
+                continue
+                
+        return results
+    except Exception as e:
+        print(f"Sina fetch failed: {e}")
+        return {}
 
 def get_fund_history(code: str, limit: int = 30) -> List[Dict[str, Any]]:
     """
     Get historical NAV data.
     """
     try:
-        # ak.fund_open_fund_info_em returns historical data
-        # Correct arg is 'symbol', not 'fund'
         df = ak.fund_open_fund_info_em(symbol=code, indicator="单位净值走势")
         if df is None or df.empty:
             return []
-            
-        # Sort by date desc and take limit
         df = df.sort_values(by="净值日期", ascending=False).head(limit)
-        # Sort back to asc for chart
         df = df.sort_values(by="净值日期", ascending=True)
-        
         results = []
         for _, row in df.iterrows():
             results.append({
@@ -164,82 +301,84 @@ def get_fund_history(code: str, limit: int = 30) -> List[Dict[str, Any]]:
 def get_fund_intraday(code: str) -> Dict[str, Any]:
     """
     Get fund holdings + real-time valuation estimate.
-    Primary source: Eastmoney API.
-    Enrichment: AkShare holdings.
     """
-    # 1) Get real-time valuation from Eastmoney
-    em_data = get_eastmoney_valuation(code)
+    # 1) Get real-time valuation (Multi-source)
+    em_data = get_combined_valuation(code)
     
     name = em_data.get("name")
-    nav = float(em_data.get("dwjz", 0.0))
-    estimate = float(em_data.get("gsz", 0.0))
-    est_rate = float(em_data.get("gszzl", 0.0))
-    update_time = em_data.get("gztime", time.strftime("%H:%M:%S"))
+    nav = float(em_data.get("nav", 0.0))
+    estimate = float(em_data.get("estimate", 0.0))
+    est_rate = float(em_data.get("estRate", 0.0))
+    update_time = em_data.get("time", time.strftime("%H:%M:%S"))
 
-    # 2) Get holdings from AkShare for detail view
+    # 1.5) Enrich with detailed info
+    pz_data = get_eastmoney_pingzhong_data(code)
+    extra_info = {}
+    if pz_data.get("name"): extra_info["full_name"] = pz_data["name"]
+    if pz_data.get("manager"): extra_info["manager"] = pz_data["manager"]
+    
+    db_info = _get_fund_info_from_db(code)
+    if db_info:
+        if not extra_info.get("full_name"): extra_info["full_name"] = db_info["name"]
+        extra_info["official_type"] = db_info["type"]
+
+    if not name:
+        name = extra_info.get("full_name", f"基金 {code}")
+    manager = extra_info.get("manager", "--")
+
+    # 2) Get holdings from AkShare
     holdings = []
     try:
         current_year = str(time.localtime().tm_year)
-        # ak.fund_portfolio_hold_em returns dataframe
-        # Correct arg is 'symbol', not 'code'
         holdings_df = ak.fund_portfolio_hold_em(symbol=code, date=current_year)
         if holdings_df is None or holdings_df.empty:
              prev_year = str(time.localtime().tm_year - 1)
              holdings_df = ak.fund_portfolio_hold_em(symbol=code, date=prev_year)
-    except Exception as e:
-        print(f"Holdings fetch error: {e}")
+    except Exception:
         holdings_df = pd.DataFrame()
 
     if not holdings_df.empty:
-        # Clean up holdings data
         try:
             holdings_df = holdings_df.copy()
-            # Ensure columns exist before operation
             if "占净值比例" in holdings_df.columns:
                 holdings_df["占净值比例"] = (
                     holdings_df["占净值比例"].astype(str).str.replace("%", "", regex=False)
                 )
                 holdings_df["占净值比例"] = pd.to_numeric(holdings_df["占净值比例"], errors="coerce").fillna(0.0)
-            else:
-                 # Fallback if column missing (unlikely unless API changed)
-                 holdings_df["占净值比例"] = 0.0
-
-            # Get cached stock spot data
-            spot_map = _get_cached_stock_spot()
-
+            
+            # Batch fetch stock prices
+            stock_codes = [str(c) for c in holdings_df["股票代码"].tolist() if c]
+            spot_map = _fetch_stock_spots_sina(stock_codes)
+            
             for _, row in holdings_df.iterrows():
                 stock_code = str(row.get("股票代码"))
-                holdings.append(
-                    {
-                        "name": row.get("股票名称"),
-                        "percent": float(row.get("占净值比例", 0.0)),
-                        "change": float(spot_map.get(stock_code, 0.0)),
-                    }
-                )
+                holdings.append({
+                    "name": row.get("股票名称"),
+                    "percent": float(row.get("占净值比例", 0.0)),
+                    "change": spot_map.get(stock_code, 0.0), 
+                })
         except Exception as e:
             print(f"Holdings processing error: {e}")
 
-    # 3) Fallback for name if Eastmoney failed
-    if not name:
-        try:
-            fund_info_df = ak.fund_name_em()
-            hit = fund_info_df[fund_info_df["基金代码"].astype(str) == str(code)]
-            if not hit.empty:
-                name = hit.iloc[0].get("基金简称")
-        except:
-            name = f"基金 {code}"
-
-    # 4) Determine sector
+    # 4) Determine sector/type
     sector = "未知"
+    matched_sector = None
     for cat, keywords in MAJOR_CATEGORIES.items():
         if any(kw in name for kw in keywords):
-            sector = cat
+            matched_sector = cat
             break
-
+    
+    official_type = extra_info.get("official_type", "")
+    if matched_sector:
+        sector = matched_sector
+    elif official_type:
+        sector = official_type
+    
     response = {
         "id": str(code),
         "name": name,
-        "type": sector, # Use sector as type for frontend display
+        "type": sector, 
+        "manager": manager,
         "nav": nav,
         "estimate": estimate,
         "estRate": est_rate,
@@ -247,4 +386,3 @@ def get_fund_intraday(code: str) -> Dict[str, Any]:
         "holdings": holdings,
     }
     return response
-

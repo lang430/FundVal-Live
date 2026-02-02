@@ -17,6 +17,8 @@ class Config:
     
     # External APIs (Eastmoney)
     EASTMONEY_API_URL = "http://fundgz.1234567.com.cn/js/{code}.js"
+    EASTMONEY_DETAILED_API_URL = "http://fund.eastmoney.com/pingzhongdata/{code}.js"
+    EASTMONEY_ALL_FUNDS_API_URL = "http://fund.eastmoney.com/js/fundcode_search.js"
     
     # AI Configuration
     # Defaults to empty, expecting environment variables or user input
