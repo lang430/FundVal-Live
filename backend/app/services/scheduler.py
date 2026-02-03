@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 CST = timezone(timedelta(hours=8))
 
 def fetch_and_update_funds():
-# ... (rest of the function stays same)
     """
     Fetches the complete fund list from AkShare and updates the SQLite DB.
     This is a blocking operation, should be run in a background thread.
@@ -149,8 +148,16 @@ def start_scheduler():
     """
     def _run():
         # 1. Initial fund list update
-        # ... (stays same)
-            
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT count(*) as cnt FROM funds")
+        count = cursor.fetchone()["cnt"]
+        conn.close()
+
+        if count == 0:
+            logger.info("DB is empty. Performing initial fetch.")
+            fetch_and_update_funds()
+
         # 2. Main loop
         while True:
             try:

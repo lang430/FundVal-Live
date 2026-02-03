@@ -11,7 +11,7 @@ export const AiAnalysis = ({ fund }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post('/analyze', fund);
+      const response = await api.post('/ai/analyze_fund', fund);
       setAnalysis(response.data);
     } catch (err) {
       setError('分析请求失败，请稍后重试');

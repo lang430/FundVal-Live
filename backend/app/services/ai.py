@@ -10,6 +10,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 from ..config import Config
 from .prompts import LINUS_FINANCIAL_ANALYSIS_PROMPT
+from .fund import get_fund_history, _calculate_technical_indicators
 
 
 class AIService:
@@ -56,7 +57,27 @@ class AIService:
             return "新闻搜索服务暂时不可用。"
 
     def _calculate_indicators(self, history: List[Dict[str, Any]]) -> Dict[str, str]:
-        # ... (stays same)
+        """
+        Calculate simple technical indicators based on recent history.
+        """
+        if not history or len(history) < 5:
+            return {"status": "数据不足", "desc": "新基金或数据缺失"}
+
+        navs = [item['nav'] for item in history]
+        current_nav = navs[-1]
+        max_nav = max(navs)
+        min_nav = min(navs)
+        avg_nav = sum(navs) / len(navs)
+
+        # Position in range
+        position = (current_nav - min_nav) / (max_nav - min_nav) if max_nav > min_nav else 0.5
+
+        status = "正常"
+        if position > 0.9: status = "高位"
+        elif position < 0.1: status = "低位"
+        elif current_nav > avg_nav * 1.05: status = "偏高"
+        elif current_nav < avg_nav * 0.95: status = "偏低"
+
         return {
             "status": status,
             "desc": f"近30日最高{max_nav:.4f}, 最低{min_nav:.4f}, 现价处于{'高位' if position>0.8 else '低位' if position<0.2 else '中位'}区间 ({int(position*100)}%)"
