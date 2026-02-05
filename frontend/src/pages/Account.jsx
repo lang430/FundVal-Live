@@ -9,8 +9,12 @@ const SORT_OPTIONS = [
   { label: '预估总值（从低到高）', key: 'est_market_value', direction: 'asc' },
   { label: '持有收益（从高到低）', key: 'accumulated_income', direction: 'desc' },
   { label: '持有收益（从低到高）', key: 'accumulated_income', direction: 'asc' },
+  { label: '持有收益率（从高到低）', key: 'accumulated_return_rate', direction: 'desc' },
+  { label: '持有收益率（从低到高）', key: 'accumulated_return_rate', direction: 'asc' },
   { label: '当日预估（从高到低）', key: 'day_income', direction: 'desc' },
   { label: '当日预估（从低到高）', key: 'day_income', direction: 'asc' },
+  { label: '当日预估收益率（从高到低）', key: 'est_rate', direction: 'desc' },
+  { label: '当日预估收益率（从低到高）', key: 'est_rate', direction: 'asc' },
 ];
 
 const Account = ({ onSelectFund, onPositionChange, onSyncWatchlist, syncLoading }) => {
