@@ -62,6 +62,78 @@ def fetch_and_update_funds():
         logger.error(f"Failed to update fund list: {e}")
 
 from ..services.subscription import get_active_subscriptions, update_notification_time, update_digest_time
+from ..services.trading_calendar import is_trading_day
+
+def collect_intraday_snapshots():
+    """
+    Collect intraday valuation snapshots for holdings (every N minutes during trading hours).
+    Only runs on trading days between 09:35-15:05.
+    Interval is configurable via INTRADAY_COLLECT_INTERVAL setting.
+    """
+    now_cst = datetime.now(CST)
+    today = now_cst.date()
+
+    # 1. Check if trading day
+    if not is_trading_day(today):
+        return
+
+    # 2. Check if within collection window (09:35-15:05)
+    current_time = now_cst.strftime("%H:%M")
+    if current_time < "09:35" or current_time > "15:05":
+        return
+
+    # 3. Get holdings (only funds with shares > 0)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT code FROM positions WHERE shares > 0")
+    codes = [row["code"] for row in cursor.fetchall()]
+
+    if not codes:
+        conn.close()
+        return
+
+    # 4. Collect valuation data
+    date_str = today.strftime("%Y-%m-%d")
+    time_str = now_cst.strftime("%H:%M")
+
+    collected = 0
+    for code in codes:
+        try:
+            data = get_combined_valuation(code)
+            if data and data.get("estimate"):
+                cursor.execute("""
+                    INSERT OR IGNORE INTO fund_intraday_snapshots
+                    (fund_code, date, time, estimate)
+                    VALUES (?, ?, ?, ?)
+                """, (code, date_str, time_str, float(data["estimate"])))
+                collected += 1
+            time.sleep(0.2)  # Avoid API rate limiting (reduced from 0.5s)
+        except Exception as e:
+            logger.error(f"Intraday collect failed for {code}: {e}")
+
+    conn.commit()
+    conn.close()
+
+    if collected > 0:
+        logger.info(f"Collected {collected} intraday snapshots at {time_str}")
+
+def cleanup_old_intraday_data():
+    """
+    Clean up intraday snapshots older than 30 days.
+    Runs once per day at 00:00.
+    """
+    now_cst = datetime.now(CST)
+    cutoff = (now_cst - timedelta(days=30)).strftime("%Y-%m-%d")
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM fund_intraday_snapshots WHERE date < ?", (cutoff,))
+    deleted = cursor.rowcount
+    conn.commit()
+    conn.close()
+
+    if deleted > 0:
+        logger.info(f"Cleaned up {deleted} old intraday records (before {cutoff})")
 
 def check_subscriptions():
     """
@@ -160,19 +232,42 @@ def start_scheduler():
             fetch_and_update_funds()
 
         # 2. Main loop
+        last_cleanup_date = None
+
         while True:
             try:
+                now_cst = datetime.now(CST)
+                today_str = now_cst.strftime("%Y-%m-%d")
+
+                # Get collection interval from settings
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT value FROM settings WHERE key = 'INTRADAY_COLLECT_INTERVAL'")
+                row = cursor.fetchone()
+                interval_minutes = int(row["value"]) if row and row["value"] else 5
+                conn.close()
+
                 # 24/7 Monitoring
                 check_subscriptions()
+
+                # Intraday data collection (trading hours only)
+                collect_intraday_snapshots()
+
                 # 待确认加仓/减仓：用当日已公布净值更新持仓
                 n = process_pending_transactions()
                 if n:
                     logger.info(f"Applied {n} pending add/reduce transactions.")
+
+                # Daily cleanup (once per day at 00:00)
+                if last_cleanup_date != today_str and now_cst.hour == 0:
+                    cleanup_old_intraday_data()
+                    last_cleanup_date = today_str
+
             except Exception as e:
                 logger.error(f"Scheduler loop error: {e}")
-            
-            # Check every 5 minutes for better time precision on digests
-            time.sleep(300)
+
+            # Sleep for configured interval (default 5 minutes)
+            time.sleep(interval_minutes * 60)
     
     t = threading.Thread(target=_run, daemon=True)
     t.start()

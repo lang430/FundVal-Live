@@ -4,16 +4,17 @@ import { StatCard } from '../components/StatCard';
 import { AiAnalysis } from '../components/AiAnalysis';
 import { HoldingsTable } from '../components/HoldingsTable';
 import { HistoryChart } from '../components/HistoryChart';
+import { IntradayChart } from '../components/IntradayChart';
 import { IndicatorsCard } from '../components/IndicatorsCard';
 
 export const FundDetail = ({ fund, onSubscribe }) => {
-  const [showHistory, setShowHistory] = useState(false);
+  const [chartType, setChartType] = useState('history'); // 'history' | 'intraday'
 
   if (!fund) return null;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      
+
       {/* 1. Detail Header Card */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
         <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
@@ -36,11 +37,11 @@ export const FundDetail = ({ fund, onSubscribe }) => {
         {/* Main Stats */}
         <div className="grid grid-cols-3 gap-6 py-6 border-t border-b border-slate-50">
           <div className="col-span-3 md:col-span-1">
-            <StatCard 
-              label="实时估算涨跌" 
-              value={fund.estRate} 
-              isRate={true} 
-              highlight={true} 
+            <StatCard
+              label="实时估算涨跌"
+              value={fund.estRate}
+              isRate={true}
+              highlight={true}
               large={true}
             />
           </div>
@@ -48,27 +49,45 @@ export const FundDetail = ({ fund, onSubscribe }) => {
           <StatCard label="昨日单位净值" value={fund.nav ? fund.nav.toFixed(4) : '--'} large={true} />
         </div>
 
-        {/* Chart Section (Conditional) */}
-        {showHistory && (
-            <div className="py-4 border-b border-slate-50 mb-4 animate-in fade-in duration-300">
-                <h3 className="text-sm font-bold text-slate-700 mb-4">近30个交易日走势</h3>
-                <HistoryChart fundId={fund.id} />
-            </div>
-        )}
+        {/* Chart Section with Tab Switcher */}
+        <div className="py-4 border-b border-slate-50 mb-4">
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setChartType('history')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                chartType === 'history'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              历史走势
+            </button>
+            <button
+              onClick={() => setChartType('intraday')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                chartType === 'intraday'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              今日分时
+            </button>
+          </div>
+
+          {chartType === 'history' ? (
+            <HistoryChart fundId={fund.id} />
+          ) : (
+            <IntradayChart fundId={fund.id} />
+          )}
+        </div>
 
         {/* Actions */}
         <div className="mt-6 flex gap-3">
-          <button 
+          <button
             onClick={(e) => onSubscribe(fund)}
             className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-medium transition-colors flex justify-center items-center gap-2"
           >
             <Bell className="w-4 h-4" /> 订阅提醒
-          </button>
-          <button 
-            onClick={() => setShowHistory(!showHistory)}
-            className={`flex-1 py-3 rounded-xl font-medium transition-colors flex justify-center items-center gap-2 ${showHistory ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-          >
-            <BarChart3 className="w-4 h-4" /> {showHistory ? '收起走势' : '历史走势'}
           </button>
         </div>
       </div>

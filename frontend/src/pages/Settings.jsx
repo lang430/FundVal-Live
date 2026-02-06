@@ -14,7 +14,8 @@ export default function Settings() {
     SMTP_PORT: '',
     SMTP_USER: '',
     SMTP_PASSWORD: '',
-    EMAIL_FROM: ''
+    EMAIL_FROM: '',
+    INTRADAY_COLLECT_INTERVAL: '5'
   });
 
   const [errors, setErrors] = useState({});
@@ -54,6 +55,12 @@ export default function Settings() {
     const port = parseInt(settings.SMTP_PORT);
     if (settings.SMTP_PORT && (isNaN(port) || port < 1 || port > 65535)) {
       newErrors.SMTP_PORT = '端口必须在 1-65535 之间';
+    }
+
+    // Interval validation
+    const interval = parseInt(settings.INTRADAY_COLLECT_INTERVAL);
+    if (settings.INTRADAY_COLLECT_INTERVAL && (isNaN(interval) || interval < 1 || interval > 60)) {
+      newErrors.INTRADAY_COLLECT_INTERVAL = '采集间隔必须在 1-60 分钟之间';
     }
 
     // URL validation
@@ -286,6 +293,34 @@ export default function Settings() {
           {errors.EMAIL_FROM && (
             <p className="mt-1 text-sm text-red-600">{errors.EMAIL_FROM}</p>
           )}
+        </div>
+      </div>
+
+      {/* Data Collection Configuration */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <h2 className="text-xl font-semibold text-gray-900">数据采集配置</h2>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            分时数据采集间隔（分钟）
+          </label>
+          <input
+            type="number"
+            value={settings.INTRADAY_COLLECT_INTERVAL}
+            onChange={(e) => handleChange('INTRADAY_COLLECT_INTERVAL', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              errors.INTRADAY_COLLECT_INTERVAL ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="5"
+            min="1"
+            max="60"
+          />
+          {errors.INTRADAY_COLLECT_INTERVAL && (
+            <p className="mt-1 text-sm text-red-600">{errors.INTRADAY_COLLECT_INTERVAL}</p>
+          )}
+          <p className="mt-2 text-sm text-gray-500">
+             请注意：分时数据采集仅在系统开启时运行（交易日 09:35-15:05）
+          </p>
         </div>
       </div>
     </div>

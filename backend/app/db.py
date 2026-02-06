@@ -98,6 +98,7 @@ def init_db():
         ('SMTP_USER', '', 0),
         ('SMTP_PASSWORD', '', 1),
         ('EMAIL_FROM', 'noreply@fundval.live', 0),
+        ('INTRADAY_COLLECT_INTERVAL', '5', 0),  # 分时数据采集间隔（分钟）
     ]
 
     cursor.executemany("""
@@ -135,6 +136,17 @@ def init_db():
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_fund_history_code ON fund_history(code);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_fund_history_date ON fund_history(date);")
+
+    # Intraday snapshots table - store intraday valuation data for charts
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS fund_intraday_snapshots (
+            fund_code TEXT NOT NULL,
+            date TEXT NOT NULL,
+            time TEXT NOT NULL,
+            estimate REAL NOT NULL,
+            PRIMARY KEY (fund_code, date, time)
+        )
+    """)
 
     # Migration: Drop old incompatible tables
     if current_version < 1:

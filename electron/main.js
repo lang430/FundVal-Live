@@ -41,7 +41,7 @@ function loadConfig() {
       log(`📝 Created default config at ${configPath}`);
     }
   } catch (error) {
-    log(`⚠️ Failed to load config: ${error.message}, using default port 21345`);
+    log(` Failed to load config: ${error.message}, using default port 21345`);
     backendPort = 21345;
   }
 }
@@ -144,7 +144,7 @@ function startBackend() {
     });
 
     backendProcess.on('close', (code) => {
-      log(`⚠️ Backend process exited with code ${code}`);
+      log(` Backend process exited with code ${code}`);
       backendLogStream.write(`[EXIT] Process exited with code ${code}\n`);
       backendLogStream.end();
 

@@ -36,6 +36,54 @@ def fund_history(fund_id: str, limit: int = 30):
         print(f"History error: {e}")
         return []
 
+@router.get("/fund/{fund_id}/intraday")
+def fund_intraday(fund_id: str, date: str = None):
+    """
+    Get intraday valuation snapshots for charts.
+    Returns today's data by default.
+    """
+    from datetime import datetime
+    from ..db import get_db_connection
+
+    if not date:
+        date = datetime.now().strftime("%Y-%m-%d")
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # 0. Check if fund exists
+    cursor.execute("SELECT 1 FROM funds WHERE code = ?", (fund_id,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Fund not found")
+
+    # 1. Get previous day NAV
+    cursor.execute("""
+        SELECT nav FROM fund_history
+        WHERE code = ? AND date < ?
+        ORDER BY date DESC
+        LIMIT 1
+    """, (fund_id, date))
+    row = cursor.fetchone()
+    prev_nav = float(row["nav"]) if row else None
+
+    # 2. Get intraday snapshots
+    cursor.execute("""
+        SELECT time, estimate FROM fund_intraday_snapshots
+        WHERE fund_code = ? AND date = ?
+        ORDER BY time ASC
+    """, (fund_id, date))
+    snapshots = [{"time": r["time"], "estimate": float(r["estimate"])} for r in cursor.fetchall()]
+
+    conn.close()
+
+    return {
+        "date": date,
+        "prevNav": prev_nav,
+        "snapshots": snapshots,
+        "lastCollectedAt": snapshots[-1]["time"] if snapshots else None
+    }
+
 @router.post("/fund/{fund_id}/subscribe")
 def subscribe_fund(fund_id: str, data: dict = Body(...)):
     """
