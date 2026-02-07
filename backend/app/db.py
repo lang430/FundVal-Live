@@ -387,6 +387,16 @@ def init_db():
 
         cursor.execute("INSERT OR IGNORE INTO schema_version (version) VALUES (3)")
 
+    # Migration: Add unique constraint to ai_prompts.name
+    if current_version < 4:
+        logger.info("Running migration: adding unique constraint to ai_prompts.name")
+
+        cursor.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_prompts_name ON ai_prompts(name)
+        """)
+
+        cursor.execute("INSERT OR IGNORE INTO schema_version (version) VALUES (4)")
+
     conn.commit()
     conn.close()
     logger.info("Database initialized.")

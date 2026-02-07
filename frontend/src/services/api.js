@@ -135,3 +135,43 @@ export const updatePrompt = async (id, data) => {
 export const deletePrompt = async (id) => {
     return api.delete(`/ai/prompts/${id}`);
 };
+
+// Data import/export
+export const exportData = async (modules) => {
+    try {
+        const modulesParam = modules.join(',');
+        const response = await api.get(`/data/export?modules=${modulesParam}`, {
+            responseType: 'blob'
+        });
+
+        // Create download link
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+
+        // Extract filename from Content-Disposition header or use default
+        const contentDisposition = response.headers['content-disposition'];
+        let filename = 'fundval_export.json';
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+            if (filenameMatch) {
+                filename = filenameMatch[1];
+            }
+        }
+
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        return { success: true };
+    } catch (error) {
+        console.error('Export failed', error);
+        throw error;
+    }
+};
+
+export const importData = async (data, modules, mode) => {
+    return api.post('/data/import', { data, modules, mode });
+};
