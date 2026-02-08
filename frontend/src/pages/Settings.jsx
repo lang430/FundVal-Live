@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Save, AlertCircle, CheckCircle2, Plus, Edit2, Trash2, Star, Download, Upload } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { getPrompts, createPrompt, updatePrompt, deletePrompt, exportData, importData } from '../services/api';
 import { PromptModal } from '../components/PromptModal';
 import { ExportModal } from '../components/ExportModal';
 import { ImportModal } from '../components/ImportModal';
+import { AISettings } from './Settings/AISettings';
+import { EmailSettings } from './Settings/EmailSettings';
+import { PromptManagement } from './Settings/PromptManagement';
+import { DataManagement } from './Settings/DataManagement';
 
 export default function Settings() {
   const [loading, setLoading] = useState(false);
@@ -232,7 +236,6 @@ export default function Settings() {
     }
   };
 
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -269,274 +272,26 @@ export default function Settings() {
       )}
 
       {/* AI Configuration */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">AI 配置</h2>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            OpenAI API Key
-          </label>
-          <input
-            type="password"
-            value={settings.OPENAI_API_KEY}
-            onChange={(e) => handleChange('OPENAI_API_KEY', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="sk-..."
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            OpenAI API Base URL
-          </label>
-          <input
-            type="text"
-            value={settings.OPENAI_API_BASE}
-            onChange={(e) => handleChange('OPENAI_API_BASE', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.OPENAI_API_BASE ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="https://api.openai.com/v1"
-          />
-          {errors.OPENAI_API_BASE && (
-            <p className="mt-1 text-sm text-red-600">{errors.OPENAI_API_BASE}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            AI Model Name
-          </label>
-          <input
-            type="text"
-            value={settings.AI_MODEL_NAME}
-            onChange={(e) => handleChange('AI_MODEL_NAME', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="gpt-4"
-          />
-        </div>
-      </div>
+      <AISettings settings={settings} errors={errors} onChange={handleChange} />
 
       {/* Email Configuration */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">邮件配置</h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              SMTP Host
-            </label>
-            <input
-              type="text"
-              value={settings.SMTP_HOST}
-              onChange={(e) => handleChange('SMTP_HOST', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="smtp.gmail.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              SMTP Port
-            </label>
-            <input
-              type="number"
-              value={settings.SMTP_PORT}
-              onChange={(e) => handleChange('SMTP_PORT', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.SMTP_PORT ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="587"
-            />
-            {errors.SMTP_PORT && (
-              <p className="mt-1 text-sm text-red-600">{errors.SMTP_PORT}</p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            SMTP User (Email)
-          </label>
-          <input
-            type="email"
-            value={settings.SMTP_USER}
-            onChange={(e) => handleChange('SMTP_USER', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.SMTP_USER ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="user@example.com"
-          />
-          {errors.SMTP_USER && (
-            <p className="mt-1 text-sm text-red-600">{errors.SMTP_USER}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            SMTP Password
-          </label>
-          <input
-            type="password"
-            value={settings.SMTP_PASSWORD}
-            onChange={(e) => handleChange('SMTP_PASSWORD', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="••••••••"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            From Email Address
-          </label>
-          <input
-            type="email"
-            value={settings.EMAIL_FROM}
-            onChange={(e) => handleChange('EMAIL_FROM', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.EMAIL_FROM ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="noreply@example.com"
-          />
-          {errors.EMAIL_FROM && (
-            <p className="mt-1 text-sm text-red-600">{errors.EMAIL_FROM}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Data Collection Configuration */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">数据采集配置</h2>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            分时数据采集间隔（分钟）
-          </label>
-          <input
-            type="number"
-            value={settings.INTRADAY_COLLECT_INTERVAL}
-            onChange={(e) => handleChange('INTRADAY_COLLECT_INTERVAL', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.INTRADAY_COLLECT_INTERVAL ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="5"
-            min="1"
-            max="60"
-          />
-          {errors.INTRADAY_COLLECT_INTERVAL && (
-            <p className="mt-1 text-sm text-red-600">{errors.INTRADAY_COLLECT_INTERVAL}</p>
-          )}
-          <p className="mt-2 text-sm text-gray-500">
-             请注意：分时数据采集仅在系统开启时运行（交易日 09:35-15:05）
-          </p>
-        </div>
-      </div>
+      <EmailSettings settings={settings} errors={errors} onChange={handleChange} />
 
       {/* AI Prompts Management */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">AI 提示词管理</h2>
-          <button
-            onClick={handleCreatePrompt}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            新建模板
-          </button>
-        </div>
-
-        {promptsLoading ? (
-          <div className="text-center py-8 text-gray-500">加载中...</div>
-        ) : prompts.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">暂无提示词模板</div>
-        ) : (
-          <div className="grid gap-4">
-            {prompts.map(prompt => (
-              <div
-                key={prompt.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-gray-900">{prompt.name}</h3>
-                      {prompt.is_default && (
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-current" />
-                          默认
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      创建于 {new Date(prompt.created_at).toLocaleString('zh-CN')}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!prompt.is_default && (
-                      <button
-                        onClick={() => handleSetDefault(prompt)}
-                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                        title="设为默认"
-                      >
-                        <Star className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleEditPrompt(prompt)}
-                      className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                      title="编辑"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeletePrompt(prompt.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                      title="删除"
-                      disabled={prompt.is_default}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <PromptManagement
+        prompts={prompts}
+        loading={promptsLoading}
+        onCreatePrompt={handleCreatePrompt}
+        onEditPrompt={handleEditPrompt}
+        onDeletePrompt={handleDeletePrompt}
+        onSetDefault={handleSetDefault}
+      />
 
       {/* Data Import/Export */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">数据导入导出</h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          <button
-            onClick={() => setExportModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-6 py-4 border-2 border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
-          >
-            <Download className="w-5 h-5" />
-            <span className="font-medium">导出数据</span>
-          </button>
-
-          <button
-            onClick={() => setImportModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-6 py-4 border-2 border-green-200 text-green-700 rounded-lg hover:bg-green-50 transition-colors"
-          >
-            <Upload className="w-5 h-5" />
-            <span className="font-medium">导入数据</span>
-          </button>
-        </div>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-sm text-yellow-800">
-            <strong>提示：</strong>
-          </p>
-          <ul className="text-sm text-yellow-700 mt-2 space-y-1 list-disc list-inside">
-            <li>导出时，敏感信息（API Key、密码）将被掩码处理</li>
-            <li>导入时，可选择合并模式（保留现有数据）或替换模式（删除现有数据）</li>
-            <li>替换模式需要二次确认，请谨慎操作</li>
-          </ul>
-        </div>
-      </div>
+      <DataManagement
+        onExport={() => setExportModalOpen(true)}
+        onImport={() => setImportModalOpen(true)}
+      />
 
       {/* Prompt Modal */}
       <PromptModal
@@ -562,4 +317,3 @@ export default function Settings() {
     </div>
   );
 }
-
