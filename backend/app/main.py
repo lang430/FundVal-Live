@@ -11,7 +11,7 @@ import json
 import logging
 from logging.handlers import RotatingFileHandler
 
-from .routers import funds, ai, account, settings, data
+from .routers import funds, ai, account, settings, data, auth
 from .db import init_db
 from .services.scheduler import start_scheduler
 
@@ -127,6 +127,7 @@ app.add_middleware(
 )
 
 # API routes
+app.include_router(auth.router, prefix="/api")
 app.include_router(funds.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 app.include_router(account.router, prefix="/api")

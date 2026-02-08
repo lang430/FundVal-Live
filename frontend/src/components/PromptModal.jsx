@@ -135,6 +135,30 @@ export const PromptModal = ({ isOpen, onClose, onSave, prompt = null }) => {
             </div>
           </div>
 
+          {/* JSON Format Requirement */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-900 mb-2">📋 JSON 格式要求（必须）</p>
+                <p className="text-sm text-amber-800 mb-3">
+                  AI 必须返回以下 JSON 格式（不要用 Markdown 代码块包裹）：
+                </p>
+                <pre className="bg-white p-3 rounded text-xs overflow-x-auto border border-amber-200 font-mono">
+{`{
+  "summary": "一句话总结",
+  "risk_level": "低风险/中风险/高风险/极高风险",
+  "analysis_report": "详细分析报告",
+  "suggestions": ["建议1", "建议2", "建议3"]
+}`}
+                </pre>
+                <p className="text-xs text-amber-700 mt-2 flex items-center gap-1">
+                   提示：在 user_prompt 末尾添加"请输出纯 JSON 格式（不要用 Markdown 代码块包裹）"
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">

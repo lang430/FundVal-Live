@@ -214,18 +214,51 @@ class AIService:
             import json
             result = json.loads(clean_json)
 
+            # 验证必需字段
+            required_fields = ["summary", "risk_level", "analysis_report", "suggestions"]
+            missing_fields = [f for f in required_fields if f not in result]
+
+            if missing_fields:
+                return {
+                    "summary": "AI 返回格式错误",
+                    "risk_level": "未知",
+                    "analysis_report": f"AI 返回的 JSON 缺少必需字段：{', '.join(missing_fields)}\n\n原始输出：\n{raw_result[:500]}",
+                    "suggestions": ["请检查提示词是否要求返回完整的 JSON 格式"],
+                    "indicators": indicators,
+                    "timestamp": datetime.datetime.now().strftime("%H:%M:%S")
+                }
+
+            # 验证字段类型
+            if not isinstance(result.get("suggestions"), list):
+                result["suggestions"] = [str(result.get("suggestions", ""))]
+
             # Enrich with indicators for frontend display
             result["indicators"] = indicators
             result["timestamp"] = datetime.datetime.now().strftime("%H:%M:%S")
 
             return result
 
+        except json.JSONDecodeError as e:
+            print(f"JSON Parse Error: {e}")
+            return {
+                "summary": "AI 返回格式错误",
+                "risk_level": "未知",
+                "analysis_report": f"AI 未返回有效的 JSON 格式。\n\n错误：{str(e)}\n\n原始输出：\n{raw_result[:500]}",
+                "suggestions": [
+                    "请检查提示词是否要求返回纯 JSON 格式",
+                    "确保 JSON 格式正确（不要有多余的逗号、引号等）",
+                    "不要用 Markdown 代码块包裹 JSON"
+                ],
+                "indicators": indicators,
+                "timestamp": datetime.datetime.now().strftime("%H:%M:%S")
+            }
         except Exception as e:
             print(f"AI Analysis Error: {e}")
             return {
                 "summary": "分析生成失败",
                 "risk_level": "未知",
                 "analysis_report": f"LLM 调用或解析失败: {str(e)}",
+                "suggestions": ["请检查 API 配置和提示词格式"],
                 "indicators": indicators,
                 "timestamp": datetime.datetime.now().strftime("%H:%M:%S")
             }

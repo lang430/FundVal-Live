@@ -1,0 +1,239 @@
+"""
+认证相关 API 端点
+"""
+from fastapi import APIRouter, HTTPException, status, Response, Request, Depends
+from pydantic import BaseModel
+from typing import Optional
+from ..auth import (
+    hash_password,
+    verify_password,
+    create_session,
+    delete_session,
+    get_current_user,
+    require_auth,
+    is_multi_user_mode,
+    User,
+    SESSION_COOKIE_NAME,
+    SESSION_EXPIRY_DAYS
+)
+from ..db import get_db_connection
+
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+# ============================================================================
+# Request/Response Models
+# ============================================================================
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    is_admin: bool
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+
+# ============================================================================
+# API Endpoints
+# ============================================================================
+
+@router.get("/system/mode")
+def get_system_mode():
+    """
+    获取系统模式（不需要认证）
+
+    Returns:
+        dict: { multi_user_mode: bool }
+    """
+    return {
+        "multi_user_mode": is_multi_user_mode()
+    }
+
+
+@router.post("/login", response_model=UserResponse)
+def login(request: LoginRequest, response: Response):
+    """
+    登录
+
+    Args:
+        request: 登录请求（username, password）
+        response: FastAPI Response 对象
+
+    Returns:
+        UserResponse: 用户信息
+
+    Raises:
+        HTTPException: 400 单用户模式不支持登录，401 用户名或密码错误
+    """
+    # 单用户模式不支持登录
+    if not is_multi_user_mode():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="单用户模式下不支持登录"
+        )
+
+    # 查询用户
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, username, password_hash, is_admin FROM users WHERE username = ?",
+            (request.username,)
+        )
+        row = cursor.fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="用户名或密码错误"
+            )
+
+        user_id = row[0]
+        username = row[1]
+        password_hash = row[2]
+        is_admin = row[3]
+
+        # 验证密码
+        if not verify_password(request.password, password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="用户名或密码错误"
+            )
+
+        # 创建 session
+        session_id = create_session(user_id)
+
+        # 设置 cookie
+        response.set_cookie(
+            key=SESSION_COOKIE_NAME,
+            value=session_id,
+            max_age=SESSION_EXPIRY_DAYS * 24 * 60 * 60,  # 秒
+            httponly=True,
+            samesite="lax"
+        )
+
+        return UserResponse(
+            id=user_id,
+            username=username,
+            is_admin=bool(is_admin)
+        )
+    finally:
+        conn.close()
+
+
+@router.post("/logout")
+def logout(request: Request, response: Response, user: User = Depends(require_auth)):
+    """
+    登出
+
+    Args:
+        request: FastAPI Request 对象
+        response: FastAPI Response 对象
+        user: 当前用户（通过 require_auth 获取）
+
+    Returns:
+        dict: 成功消息
+    """
+    # 单用户模式不需要登出
+    if not is_multi_user_mode():
+        return {"message": "单用户模式下不需要登出"}
+
+    # 删除服务端 session
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    if session_id:
+        delete_session(session_id)
+
+    # 清除客户端 cookie
+    response.delete_cookie(key=SESSION_COOKIE_NAME)
+
+    return {"message": "登出成功"}
+
+
+@router.get("/me", response_model=UserResponse)
+def get_me(user: User = Depends(require_auth)):
+    """
+    获取当前用户信息
+
+    Args:
+        user: 当前用户（通过 require_auth 获取）
+
+    Returns:
+        UserResponse: 用户信息
+    """
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        is_admin=user.is_admin
+    )
+
+
+@router.post("/change-password")
+def change_password(
+    request: ChangePasswordRequest,
+    user: User = Depends(require_auth)
+):
+    """
+    修改密码
+
+    Args:
+        request: 修改密码请求（old_password, new_password）
+        user: 当前用户（通过 require_auth 获取）
+
+    Returns:
+        dict: 成功消息
+
+    Raises:
+        HTTPException: 400 旧密码错误
+    """
+    # 单用户模式不支持修改密码
+    if not is_multi_user_mode():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="单用户模式下不支持修改密码"
+        )
+
+    # 查询用户密码哈希
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT password_hash FROM users WHERE id = ?",
+            (user.id,)
+        )
+        row = cursor.fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="用户不存在"
+            )
+
+        password_hash = row[0]
+
+        # 验证旧密码
+        if not verify_password(request.old_password, password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="旧密码错误"
+            )
+
+        # 更新密码
+        new_password_hash = hash_password(request.new_password)
+        cursor.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (new_password_hash, user.id)
+        )
+        conn.commit()
+
+        return {"message": "密码修改成功"}
+    finally:
+        conn.close()
