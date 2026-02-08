@@ -155,7 +155,7 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
     };
 
     loadPreferences();
-  }, [currentUser?.default_account_id]); // 依赖 currentUser.default_account_id
+  }, [currentUser?.id]); // 依赖 currentUser.id，确保用户切换时重新加载
 
   // Sync watchlist to backend whenever it changes
   useEffect(() => {
