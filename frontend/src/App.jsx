@@ -314,8 +314,26 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
     setModalOpen(true);
   };
 
-  const handleCardClick = (fundId) => {
-    setDetailFundId(fundId);
+  const handleCardClick = async (fundId) => {
+    // 检查基金是否在 watchlist 中
+    const existingFund = watchlist.find(f => f.id === fundId);
+
+    if (!existingFund) {
+      // 如果不在 watchlist，先加载基金详情
+      try {
+        const detail = await getFundDetail(fundId);
+        const newFund = { ...detail, trusted: true };
+        // 临时添加到 watchlist（不会持久化，因为用户没有主动添加）
+        setWatchlist(prev => [...prev, newFund]);
+        setDetailFundId(fundId);
+      } catch (e) {
+        alert('无法加载基金详情');
+        return;
+      }
+    } else {
+      setDetailFundId(fundId);
+    }
+
     setCurrentView('detail');
     window.scrollTo(0, 0);
   };
@@ -355,6 +373,11 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
               newFunds.map(async (pos) => {
                   try {
                       const detail = await getFundDetail(pos.code);
+                      // 确保返回的数据有 id 字段
+                      if (!detail.id) {
+                          console.error(`Fund ${pos.code} has no id field`, detail);
+                          return null;
+                      }
                       return { ...detail, trusted: true };
                   } catch (e) {
                       console.error(`Failed to sync ${pos.code}`, e);
@@ -366,10 +389,18 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
           const validFunds = addedFunds.filter(f => f !== null);
 
           if (validFunds.length > 0) {
-              setWatchlist(prev => [...prev, ...validFunds]);
+              console.log('Adding funds to watchlist:', validFunds.map(f => ({ id: f.id, name: f.name })));
+              setWatchlist(prev => {
+                  const updated = [...prev, ...validFunds];
+                  console.log('Updated watchlist length:', updated.length);
+                  return updated;
+              });
               alert(`成功同步 ${validFunds.length} 个基金到关注列表`);
+          } else {
+              alert('同步失败：无法获取基金详情');
           }
       } catch (e) {
+          console.error('Sync error:', e);
           alert('同步失败');
       } finally {
           setSyncLoading(false);
