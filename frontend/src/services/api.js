@@ -26,13 +26,17 @@ export const getFundDetail = async (fundId) => {
   }
 };
 
-export const getFundHistory = async (fundId, limit = 30) => {
+export const getFundHistory = async (fundId, limit = 30, accountId = null) => {
     try {
-        const response = await api.get(`/fund/${fundId}/history`, { params: { limit } });
+        const params = { limit };
+        if (accountId) {
+            params.account_id = accountId;
+        }
+        const response = await api.get(`/fund/${fundId}/history`, { params });
         return response.data;
     } catch (error) {
         console.error("Get history failed", error);
-        return [];
+        return { history: [], transactions: [] };
     }
 };
 

@@ -395,6 +395,7 @@ export default function App() {
           <FundDetail
             fund={currentDetailFund}
             onSubscribe={openSubscribeModal}
+            accountId={currentAccount}
           />
         )}
       </main>
