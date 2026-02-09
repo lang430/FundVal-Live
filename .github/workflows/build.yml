@@ -141,7 +141,45 @@ jobs:
             - **AppImage**: `FundVal-Live-*.AppImage`
             - **Debian/Ubuntu**: `fundval-live_*_amd64.deb`
 
-            ## 本次更新 (v1.2.2)
+            ## 本次更新 (v1.2.3)
+
+            ### 🐛 Bug 修复
+
+            - **修复多用户模式下 AI 配置无法生效的问题**
+              - 多用户模式下 AI API Key 配置保存到 user_settings 表，但读取时错误地从 settings 表读取
+              - 修复后正确从 user_settings 表读取用户配置
+              - 确保每个用户可以使用独立的 AI 配置
+
+            - **修复单用户模式下设置保存失败的问题**
+              - settings 表主键为 (key, user_id)，但代码使用 ON CONFLICT(key) 导致约束不匹配
+              - 修复所有 INSERT 语句，显式指定 user_id = NULL 并使用正确的 ON CONFLICT 子句
+              - 解决 "ON CONFLICT clause does not match any PRIMARY KEY" 错误
+
+            - **修复分时数据采集不支持多用户的问题**
+              - 分时数据采集只读取单用户模式的关注列表，忽略多用户模式
+              - 修复后同时采集所有用户的持仓和关注列表
+              - 确保多用户模式下每个用户都能看到关注基金的分时图表
+
+            - **修复数据库查询缺少 user_id 过滤的问题**
+              - 多处 settings 表查询缺少 user_id IS NULL 条件
+              - 可能导致读取到错误的配置或多条记录
+              - 统一添加 user_id 过滤条件，确保数据隔离
+
+            ### 🔧 技术改进
+
+            - **改进前端依赖安装**
+              - start.sh 中使用 npm ci 替代条件判断的 npm install
+              - 确保依赖严格按照 package-lock.json 安装
+              - 避免构建时缺少依赖的问题
+
+            - **代码质量提升**
+              - 统一所有 settings/user_settings 表的读写逻辑
+              - 确保单用户和多用户模式的数据完全隔离
+              - 修复 7 个文件中的数据库操作问题
+
+            ---
+
+            ## 历史更新 (v1.2.2)
 
             ### 🐛 Bug 修复
 
