@@ -258,7 +258,7 @@ def register(request: LoginRequest, response: Response):
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT value FROM settings WHERE key = 'allow_registration'")
+        cursor.execute("SELECT value FROM settings WHERE key = 'allow_registration' AND user_id IS NULL")
         row = cursor.fetchone()
         allow_registration = row and row[0] == '1'
 
