@@ -66,7 +66,7 @@ from ..services.trading_calendar import is_trading_day
 
 def collect_intraday_snapshots():
     """
-    Collect intraday valuation snapshots for holdings (every N minutes during trading hours).
+    Collect intraday valuation snapshots for holdings + watchlist (every N minutes during trading hours).
     Only runs on trading days between 09:35-15:05.
     Interval is configurable via INTRADAY_COLLECT_INTERVAL setting.
     """
@@ -82,11 +82,16 @@ def collect_intraday_snapshots():
     if current_time < "09:35" or current_time > "15:05":
         return
 
-    # 3. Get holdings (only funds with shares > 0, across all users)
+    # 3. Get holdings + watchlist (all funds users care about)
     conn = get_db_connection()
     cursor = conn.cursor()
-    # 获取所有用户的持仓基金（去重）
-    cursor.execute("SELECT DISTINCT code FROM positions WHERE shares > 0")
+    cursor.execute("""
+        SELECT DISTINCT code FROM (
+            SELECT code FROM positions WHERE shares > 0
+            UNION
+            SELECT fund_code as code FROM watchlist
+        )
+    """)
     codes = [row["code"] for row in cursor.fetchall()]
 
     if not codes:
