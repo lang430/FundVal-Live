@@ -62,13 +62,13 @@ jobs:
       - name: Build backend with PyInstaller (macOS arm64)
         if: runner.os == 'macOS'
         run: |
-          arch -arm64 uv run pyinstaller backend.spec --clean --target-arch arm64
+          arch -arm64 uv run pyinstaller backend.spec --clean
           mv dist/fundval-backend dist/fundval-backend-arm64
 
       - name: Build backend with PyInstaller (macOS x64)
         if: runner.os == 'macOS'
         run: |
-          arch -x86_64 uv run pyinstaller backend.spec --clean --target-arch x86_64
+          arch -x86_64 uv run pyinstaller backend.spec --clean
           mv dist/fundval-backend dist/fundval-backend-x64
 
       - name: Build backend with PyInstaller (Windows/Linux)
