@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import ReactMarkdown from 'react-markdown';
 import { analyzeFundAI } from '../services/api';
 
@@ -87,10 +87,8 @@ export default function AiChat({ accountId }) {
         className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"
       >
         {messages.map((msg) => (
-            <motion.div 
+            <div
                 key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
                 className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
             >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
@@ -108,7 +106,7 @@ export default function AiChat({ accountId }) {
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                 </div>
-            </motion.div>
+            </div>
         ))}
 
         {loading && (

@@ -1,7 +1,7 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
-import { motion, AnimatePresence } from 'framer-motion';
+
 
 export default function MainLayout({ 
   children, 
@@ -37,18 +37,9 @@ export default function MainLayout({
         />
         
         <main className="p-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentView}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="max-w-7xl mx-auto"
-            >
+          <div className="max-w-7xl mx-auto">
               {children}
-            </motion.div>
-          </AnimatePresence>
+          </div>
         </main>
       </div>
     </div>

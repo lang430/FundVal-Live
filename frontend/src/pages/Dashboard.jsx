@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+
 import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { getAccountPositions, getFundDetail } from '../services/api';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
@@ -80,9 +80,7 @@ export default function Dashboard({ currentAccount }) {
       {/* 1. Hero Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Total Assets */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div 
           className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-6 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden group"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-110 transition-transform duration-500"></div>
@@ -105,13 +103,10 @@ export default function Dashboard({ currentAccount }) {
                 </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Total Return */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+        <div 
           className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-3xl p-6 relative overflow-hidden"
         >
           <div className="flex items-center justify-between mb-4">
@@ -141,13 +136,10 @@ export default function Dashboard({ currentAccount }) {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </motion.div>
+        </div>
 
         {/* Quick Actions */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+        <div 
           className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-3xl p-6 flex flex-col justify-center gap-4"
         >
           <h3 className="text-slate-400 font-medium mb-2">快捷操作</h3>
@@ -165,14 +157,11 @@ export default function Dashboard({ currentAccount }) {
                 <span className="font-medium">分析</span>
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* 2. Top Positions */}
-      <motion.div
-         initial={{ opacity: 0, y: 20 }}
-         animate={{ opacity: 1, y: 0 }}
-         transition={{ delay: 0.3 }} 
+      <div
       >
         <h2 className="text-xl font-bold text-slate-200 mb-6 flex items-center gap-2">
             <PieChart className="w-5 h-5 text-blue-500" />
@@ -208,7 +197,7 @@ export default function Dashboard({ currentAccount }) {
                 </div>
             ))}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

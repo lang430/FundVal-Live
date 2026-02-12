@@ -9,7 +9,6 @@ import {
   PieChart,
   MessageSquare
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import Clock from '../common/Clock';
 
 export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, isAdmin, logout }) {
@@ -54,9 +53,8 @@ export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, 
                   : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
               }`}
             >
-              {isActive && (
-                <motion.div
-                  layoutId="activeTab"
+      {isActive && (
+                <div
                   className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full"
                 />
               )}
