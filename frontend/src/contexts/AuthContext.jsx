@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
         try {
           const user = await getMe();
           setCurrentUser(user);
-        } catch (error) {
+        } catch {
           // 未登录或 session 过期
           setCurrentUser(null);
         }
@@ -44,8 +44,11 @@ export function AuthProvider({ children }) {
 
   // 登出
   const logout = async () => {
-    await apiLogout();
-    setCurrentUser(null);
+    try {
+      await apiLogout();
+    } finally {
+      setCurrentUser(null);
+    }
   };
 
   // 初始化时检查认证状态

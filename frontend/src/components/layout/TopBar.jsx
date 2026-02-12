@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Menu, X, User, LogOut, Settings, KeyRound, ChevronDown, Wallet } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export default function TopBar({ onMenuClick, showMobileMenu, onChangePassword }) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -17,7 +17,6 @@ export default function TopBar({ onMenuClick, showMobileMenu, onChangePassword }
   const notificationRef = useRef(null);
   
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -40,8 +39,9 @@ export default function TopBar({ onMenuClick, showMobileMenu, onChangePassword }
       await logout();
     } catch (error) {
       console.error('Logout failed:', error);
-      // Force client-side logout anyway
-      window.location.href = '/login';
+      window.location.replace('/');
+    } finally {
+      setShowUserMenu(false);
     }
   };
 
