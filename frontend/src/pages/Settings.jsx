@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, AlertCircle, CheckCircle2, Users, Key } from 'lucide-react';
 import { getPrompts, createPrompt, updatePrompt, deletePrompt, exportData, importData } from '../services/api';
 import { enableMultiUser } from '../api/admin';
-import { changePassword } from '../api/auth';
+import { changePassword, getRegistrationStatus, setRegistrationStatus } from '../api/auth';
 import { useAuth } from '../contexts/AuthContext';
 import { PromptModal } from '../components/PromptModal';
 import { ExportModal } from '../components/ExportModal';
@@ -13,7 +13,7 @@ import { PromptManagement } from './Settings/PromptManagement';
 import { DataManagement } from './Settings/DataManagement';
 
 export default function Settings() {
-  const { isMultiUserMode, checkAuth } = useAuth();
+  const { isMultiUserMode, isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -48,10 +48,26 @@ export default function Settings() {
   // Change password state
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
 
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [registrationSaving, setRegistrationSaving] = useState(false);
+
   useEffect(() => {
     loadSettings();
     loadPrompts();
   }, []);
+
+  useEffect(() => {
+    const loadRegistration = async () => {
+      if (!isAdmin) return;
+      try {
+        const data = await getRegistrationStatus();
+        setRegistrationEnabled(!!data.registration_enabled);
+      } catch {
+        setRegistrationEnabled(false);
+      }
+    };
+    loadRegistration();
+  }, [isAdmin]);
 
   const loadSettings = async () => {
     setLoading(true);
@@ -154,6 +170,23 @@ export default function Settings() {
     setSettings(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleToggleRegistration = async () => {
+    if (!isAdmin) return;
+    try {
+      setRegistrationSaving(true);
+      const data = await setRegistrationStatus(!registrationEnabled);
+      setRegistrationEnabled(!!data.registration_enabled);
+      setMessage({
+        type: 'success',
+        text: data.registration_enabled ? '已开启注册' : '已关闭注册',
+      });
+    } catch (error) {
+      setMessage({ type: 'error', text: error.message || '更新注册设置失败' });
+    } finally {
+      setRegistrationSaving(false);
     }
   };
 
@@ -315,6 +348,34 @@ export default function Settings() {
         onExport={() => setExportModalOpen(true)}
         onImport={() => setImportModalOpen(true)}
       />
+
+      {/* Registration - Admin only */}
+      {isMultiUserMode && isAdmin && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">用户注册</h2>
+          <div className="flex items-start justify-between p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+            <div className="flex-1">
+              <h3 className="font-medium text-gray-900">开放注册</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                开启后，登录页会出现注册入口，新用户可自行创建账号。
+              </p>
+            </div>
+            <button
+              onClick={handleToggleRegistration}
+              disabled={registrationSaving}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                registrationEnabled ? 'bg-indigo-600' : 'bg-gray-300'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  registrationEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Account Security - Only show in multi-user mode */}
       {isMultiUserMode && (

@@ -16,7 +16,7 @@ export default function TopBar({ onMenuClick, showMobileMenu, onChangePassword }
   const userMenuRef = useRef(null);
   const notificationRef = useRef(null);
   
-  const { user, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -176,12 +176,12 @@ export default function TopBar({ onMenuClick, showMobileMenu, onChangePassword }
             className="flex items-center gap-2 p-1.5 pl-2 pr-1 sm:pr-2 hover:bg-slate-100 rounded-xl sm:rounded-full border border-transparent hover:border-slate-200 transition-all group"
           >
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-medium shadow-md shadow-blue-500/20 group-hover:shadow-blue-500/30 transition-shadow">
-              {user?.username?.[0]?.toUpperCase() || <User size={16} />}
+              {currentUser?.username?.[0]?.toUpperCase() || <User size={16} />}
             </div>
             
             <div className="hidden sm:flex flex-col items-start mr-1">
                 <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
-                    {user?.username || 'User'}
+                    {currentUser?.username || 'User'}
                 </span>
             </div>
             <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 hidden sm:block ${showUserMenu ? 'rotate-180' : ''}`} />
@@ -190,7 +190,7 @@ export default function TopBar({ onMenuClick, showMobileMenu, onChangePassword }
           {showUserMenu && (
             <div className="absolute right-0 mt-2 w-56 bg-white/90 backdrop-blur-xl border border-slate-200/80 rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200 origin-top-right">
               <div className="p-3 border-b border-slate-100">
-                <p className="text-sm font-semibold text-slate-800">{user?.username || 'Guest'}</p>
+                <p className="text-sm font-semibold text-slate-800">{currentUser?.username || 'Guest'}</p>
                 <p className="text-xs text-slate-500 mt-0.5">普通用户</p>
               </div>
               <div className="p-1.5">

@@ -179,9 +179,9 @@ async function createTables(db) {
 
 async function insertDefaultSettings(db) {
   const defaults = [
-    ['OPENAI_API_KEY', '', 1, null],
-    ['OPENAI_API_BASE', 'https://api.openai.com/v1', 0, null],
-    ['AI_MODEL_NAME', 'gpt-3.5-turbo', 0, null],
+    ['OPENAI_API_KEY', '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', 1, null],
+    ['OPENAI_API_BASE', 'https://integrate.api.nvidia.com/v1', 0, null],
+    ['AI_MODEL_NAME', 'deepseek-ai/deepseek-v3.2', 0, null],
     ['SMTP_HOST', 'smtp.gmail.com', 0, null],
     ['SMTP_PORT', '587', 0, null],
     ['SMTP_USER', '', 0, null],

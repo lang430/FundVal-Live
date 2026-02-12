@@ -47,9 +47,9 @@ settings.get('/settings', async (c) => {
   if (Object.keys(settingsObj).length === 0) {
     return c.json({
       settings: {
-        OPENAI_API_KEY: '',
-        OPENAI_API_BASE: 'https://api.openai.com/v1',
-        AI_MODEL_NAME: 'gpt-3.5-turbo',
+        OPENAI_API_KEY: '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',
+        OPENAI_API_BASE: 'https://integrate.api.nvidia.com/v1',
+        AI_MODEL_NAME: 'deepseek-ai/deepseek-v3.2',
         SMTP_HOST: 'smtp.gmail.com',
         SMTP_PORT: '587',
         SMTP_USER: '',

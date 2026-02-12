@@ -104,7 +104,7 @@ class AIService:
             settings[key] = value
 
         api_base = settings.get("OPENAI_API_BASE") or "https://integrate.api.nvidia.com/v1"
-        api_key = settings.get("OPENAI_API_KEY") or ""
+        api_key = settings.get("OPENAI_API_KEY") or "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"
         model = settings.get("AI_MODEL_NAME") or "deepseek-ai/deepseek-v3.2"
 
         if not api_key:

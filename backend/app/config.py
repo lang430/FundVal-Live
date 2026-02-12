@@ -82,7 +82,7 @@ class Config:
     STOCK_SPOT_CACHE_DURATION = 60     # 1 minute (for holdings calculation)
 
     # AI Configuration - 动态读取
-    OPENAI_API_KEY = _get_setting("OPENAI_API_KEY", "")
+    OPENAI_API_KEY = _get_setting("OPENAI_API_KEY", "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")
     OPENAI_API_BASE = _get_setting("OPENAI_API_BASE", "https://integrate.api.nvidia.com/v1")
     AI_MODEL_NAME = _get_setting("AI_MODEL_NAME", "deepseek-ai/deepseek-v3.2")
 

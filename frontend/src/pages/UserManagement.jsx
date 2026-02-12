@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, AlertCircle, Shield, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getUsers, createUser, deleteUser, getAllowRegistration, setAllowRegistration } from '../api/admin';
+import { getUsers, createUser, deleteUser } from '../api/admin';
 
 export default function UserManagement() {
   const { currentUser, isAdmin } = useAuth();
@@ -9,32 +9,11 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [allowRegistration, setAllowRegistrationState] = useState(false);
-
-  // 权限检查
-  if (!isAdmin) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="font-semibold text-red-900">权限不足</h3>
-            <p className="text-sm text-red-700 mt-1">只有管理员可以访问用户管理页面</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // 加载用户列表
   const loadUsers = async () => {
     const data = await getUsers();
     setUsers(data);
-  };
-
-  const loadRegistrationSetting = async () => {
-    const data = await getAllowRegistration();
-    setAllowRegistrationState(data.allow_registration);
   };
 
   // 刷新用户列表（带 loading 状态）
@@ -52,13 +31,14 @@ export default function UserManagement() {
 
   useEffect(() => {
     const loadAll = async () => {
+      if (!isAdmin) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError('');
       try {
-        await Promise.all([
-          loadUsers(),
-          loadRegistrationSetting()
-        ]);
+        await loadUsers();
       } catch (err) {
         setError(err.message);
       } finally {
@@ -67,120 +47,99 @@ export default function UserManagement() {
     };
 
     loadAll();
-  }, []);
-
-  // 切换注册开关
-  const handleToggleRegistration = async () => {
-    try {
-      const newValue = !allowRegistration;
-      await setAllowRegistration(newValue);
-      setAllowRegistrationState(newValue);
-    } catch (err) {
-      alert('更新注册设置失败：' + err.message);
-    }
-  };
+  }, [isAdmin]);
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <Users className="w-6 h-6 text-indigo-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">用户管理</h1>
-              <p className="text-sm text-gray-600">管理系统用户和权限</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            创建用户
-          </button>
-        </div>
-
-        {/* 注册开关 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-between">
-          <div>
-            <h3 className="font-medium text-gray-900">允许用户注册</h3>
-            <p className="text-sm text-gray-600 mt-1">开启后，新用户可以自行注册账户</p>
-          </div>
-          <button
-            onClick={handleToggleRegistration}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              allowRegistration ? 'bg-indigo-600' : 'bg-gray-300'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                allowRegistration ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+      {!isAdmin ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-800">{error}</p>
-        </div>
-      )}
-
-      {/* User List */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">加载中...</p>
+          <div>
+            <h3 className="font-semibold text-red-900">权限不足</h3>
+            <p className="text-sm text-red-700 mt-1">只有管理员可以访问用户管理页面</p>
+          </div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  用户
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  角色
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {users.map((user) => (
-                <UserRow
-                  key={user.id}
-                  user={user}
-                  currentUserId={currentUser?.id}
-                  onDelete={refreshUsers}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        <>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Users className="w-6 h-6 text-indigo-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">用户管理</h1>
+                  <p className="text-sm text-gray-600">管理系统用户和权限</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                创建用户
+              </button>
+            </div>
+          </div>
 
-      {/* Create User Modal */}
-      {showCreateModal && (
-        <CreateUserModal
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
-            setShowCreateModal(false);
-            refreshUsers();
-          }}
-        />
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">加载中...</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      用户
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      角色
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {users.map((user) => (
+                    <UserRow
+                      key={user.id}
+                      user={user}
+                      currentUserId={currentUser?.id}
+                      onDelete={refreshUsers}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {showCreateModal && (
+            <CreateUserModal
+              onClose={() => setShowCreateModal(false)}
+              onSuccess={() => {
+                setShowCreateModal(false);
+                refreshUsers();
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );
 }
+
+// User Row Component
 
 // User Row Component
 function UserRow({ user, currentUserId, onDelete }) {

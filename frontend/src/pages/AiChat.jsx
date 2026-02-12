@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
 
 import ReactMarkdown from 'react-markdown';
-import { analyzeFundAI } from '../services/api';
 
 export default function AiChat({ accountId }) {
   const [messages, setMessages] = useState([
@@ -25,41 +24,110 @@ export default function AiChat({ accountId }) {
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
-    const userMsg = { id: Date.now(), role: 'user', content: input };
-    setMessages(prev => [...prev, userMsg]);
+    const now = Date.now();
+    const userMsg = { id: now, role: 'user', content: input };
+    const assistantMsgId = now + 1;
+    setMessages(prev => [...prev, userMsg, { id: assistantMsgId, role: 'assistant', content: '' }]);
     setInput('');
     setLoading(true);
 
     try {
-      // Direct chat is not yet fully implemented in backend, simulating analysis for a specific fund for demo
-      // In a real chat app, we'd call a chat endpoint. Here we'll map common queries to the analyze endpoint if possible,
-      // or give a generic response.
-      
-      // Smart detection (mock logic for demo purposes)
-      let responseContent = '';
-      
-      if (input.includes('分析') || input.includes('怎么样')) {
-          // If we could detect a fund code, we'd call analyzeFundAI. 
-          // For now, let's simulate a thinking process
-          await new Promise(r => setTimeout(r, 1500));
-          responseContent = "根据最新的市场数据，目前该板块处于震荡调整期。建议关注长期均线的支撑情况，控制仓位风险。对于科技成长类基金，近期波动较大，适合定投分批介入。";
-      } else {
-          await new Promise(r => setTimeout(r, 1000));
-          responseContent = "收到。作为一个专注于基金数据的 AI 助手，我建议你关注最新的财报数据和宏观政策变化。需要我为你深入分析特定的基金吗？";
+      const systemPrompt = `你是 FundVal Live 的 AI 投资顾问，专注于基金与资产配置。请用简体中文回答，结构清晰，给出风险提示。用户当前 account_id=${accountId ?? 'unknown'}。`;
+      const requestMessages = [
+        { role: 'system', content: systemPrompt },
+        ...messages
+          .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim().length > 0)
+          .map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: userMsg.content },
+      ];
+
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          messages: requestMessages,
+          stream: true,
+        }),
+      });
+
+      if (!res.ok) {
+        let detail = '';
+        try {
+          const data = await res.json();
+          detail = data?.detail || '';
+        } catch {
+          detail = await res.text();
+        }
+        throw new Error(detail || 'AI 服务请求失败');
       }
 
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: responseContent
-      }]);
+      if (!res.body) {
+        throw new Error('AI 流式响应不可用');
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let assistantText = '';
+      let done = false;
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        if (readerDone) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        while (true) {
+          const boundary = buffer.indexOf('\n\n');
+          if (boundary === -1) break;
+
+          const chunk = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith('data:')) continue;
+            const payload = trimmed.slice(5).trim();
+            if (!payload) continue;
+            if (payload === '[DONE]') {
+              done = true;
+              break;
+            }
+
+            let json;
+            try {
+              json = JSON.parse(payload);
+            } catch {
+              continue;
+            }
+
+            const delta =
+              json?.choices?.[0]?.delta?.content ??
+              json?.choices?.[0]?.message?.content ??
+              '';
+
+            if (delta) {
+              assistantText += delta;
+              setMessages(prev =>
+                prev.map(m => (m.id === assistantMsgId ? { ...m, content: assistantText } : m))
+              );
+            }
+          }
+          if (done) break;
+        }
+      }
 
     } catch (e) {
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: '抱歉，我的连接似乎出了点问题，请稍后再试。'
-      }]);
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === assistantMsgId
+            ? { ...m, content: e?.message || '抱歉，我的连接似乎出了点问题，请稍后再试。' }
+            : m
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -76,7 +144,7 @@ export default function AiChat({ accountId }) {
             <h2 className="font-bold text-slate-800">AI 投资顾问</h2>
             <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                <span className="text-xs text-slate-500 font-medium">Online · Powered by OpenAI</span>
+                <span className="text-xs text-slate-500 font-medium">Online · Powered by NVIDIA</span>
             </div>
         </div>
         <div className="ml-auto">

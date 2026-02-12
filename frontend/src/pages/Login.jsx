@@ -1,21 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LogIn, UserPlus, AlertCircle, ArrowRight, User, Lock, Wallet } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { register as apiRegister } from '../api/auth';
-
-// Helper to get settings. In a real app, this might come from a context or a hook.
-const getRegistrationEnabled = async () => {
-  try {
-    const res = await fetch('/api/auth/registration-enabled');
-    if (res.ok) {
-      const data = await res.json();
-      return data.registration_enabled;
-    }
-  } catch (e) {
-    console.error("Failed to check registration", e);
-  }
-  return false;
-};
+import { getRegistrationStatus, initAdmin, register as apiRegister } from '../api/auth';
 
 export default function Login() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
@@ -27,16 +13,27 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [allowRegistration, setAllowRegistration] = useState(false);
-  const { login } = useAuth();
+  const { login, checkAuth, needsInit } = useAuth();
 
   useEffect(() => {
-    getRegistrationEnabled().then(enabled => {
-      setAllowRegistration(enabled);
-      if (!enabled && isRegisterMode) {
-        setIsRegisterMode(false);
+    if (needsInit) {
+      setAllowRegistration(false);
+      setIsRegisterMode(false);
+      return;
+    }
+    const load = async () => {
+      try {
+        const data = await getRegistrationStatus();
+        const enabled = !!data.registration_enabled;
+        setAllowRegistration(enabled);
+        if (!enabled && isRegisterMode) setIsRegisterMode(false);
+      } catch {
+        setAllowRegistration(false);
+        if (isRegisterMode) setIsRegisterMode(false);
       }
-    });
-  }, [isRegisterMode]);
+    };
+    load();
+  }, [isRegisterMode, needsInit]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,17 +41,17 @@ export default function Login() {
     setLoading(true);
 
     try {
+      if (needsInit) {
+        await initAdmin(formData.username, formData.password);
+        await checkAuth();
+        return;
+      }
       if (isRegisterMode) {
         if (formData.password !== formData.confirmPassword) {
           throw new Error('两次输入的密码不一致');
         }
         await apiRegister(formData.username, formData.password);
-        // Alert success and switch to login, or auto-login?
-        // Let's auto login or just switch mode with a message
-        setError('');
-        setIsRegisterMode(false);
-        // Ideally show a success message toast here
-        alert('注册成功，请登录');
+        await checkAuth();
       } else {
         await login(formData.username, formData.password);
       }
@@ -83,10 +80,10 @@ export default function Login() {
             <Wallet className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">
-            FundVal Live
+            {needsInit ? '初始化管理员' : 'FundVal Live'}
           </h1>
           <p className="text-slate-400 mt-2 text-sm tracking-wide">
-            智能基金实时监控系统
+            {needsInit ? '首次使用请先创建管理员账号' : '智能基金实时监控系统'}
           </p>
         </div>
 
@@ -164,7 +161,7 @@ export default function Login() {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  {isRegisterMode ? '注册账户' : '登录'}
+                  {needsInit ? '创建管理员并进入系统' : (isRegisterMode ? '注册账户' : '登录')}
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </>
               )}
@@ -174,7 +171,7 @@ export default function Login() {
 
         {/* Footer Toggle */}
         <div className="mt-8 text-center animate-fade-in animation-delay-4000">
-          {allowRegistration ? (
+          {!needsInit && allowRegistration ? (
             <p className="text-slate-400 text-sm">
               {isRegisterMode ? '已有账户？' : '还没有账户？'}
               <button
@@ -199,7 +196,7 @@ export default function Login() {
               </button>
             </p>
           ) : (
-             !isRegisterMode && <p className="text-slate-600 text-xs">仅限授权用户访问</p>
+             !isRegisterMode && !needsInit && <p className="text-slate-600 text-xs">仅限授权用户访问</p>
           )}
         </div>
       </div>

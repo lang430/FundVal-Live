@@ -104,8 +104,13 @@ auth.get('/registration', async (c) => {
   return c.json({ registration_enabled: enabled });
 });
 
-auth.get('/mode', (c) => {
-  return c.json({ mode: c.env.ENVIRONMENT || 'production' });
+auth.get('/mode', async (c) => {
+  const db = c.env.DB;
+  const multiUserMode = await hasAdminUser(db);
+  return c.json({
+    environment: c.env.ENVIRONMENT || 'production',
+    multi_user_mode: multiUserMode,
+  });
 });
 
 auth.post('/login', async (c) => {

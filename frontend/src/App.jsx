@@ -51,6 +51,12 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
 
   const [syncLoading, setSyncLoading] = useState(false);
 
+  useEffect(() => {
+    if (isMultiUserMode && !isAdmin && (currentView === 'settings' || currentView === 'users')) {
+      setCurrentView('dashboard');
+    }
+  }, [currentView, isAdmin, isMultiUserMode]);
+
   // Load preferences from backend on mount
   useEffect(() => {
     const loadPreferences = async () => {

@@ -17,8 +17,11 @@ export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, 
     { id: 'list', label: '基金市场', icon: TrendingUp },
     { id: 'account', label: '资产组合', icon: PieChart },
     { id: 'ai-chat', label: 'AI 分析师', icon: MessageSquare }, // New Feature
-    { id: 'settings', label: '系统设置', icon: SettingsIcon },
   ];
+
+  if (!isMultiUserMode || isAdmin) {
+    menuItems.push({ id: 'settings', label: '系统设置', icon: SettingsIcon });
+  }
 
   if (isMultiUserMode && isAdmin) {
     menuItems.push({ id: 'users', label: '用户管理', icon: Users });

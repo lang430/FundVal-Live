@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getAuthMode, login as apiLogin, logout as apiLogout, getMe } from '../api/auth';
+import { getAuthMode, getInitStatus, login as apiLogin, logout as apiLogout, getMe } from '../api/auth';
 
 const AuthContext = createContext(null);
 
@@ -7,13 +7,24 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [isMultiUserMode, setIsMultiUserMode] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [needsInit, setNeedsInit] = useState(false);
+  const [needsRebuild, setNeedsRebuild] = useState(false);
 
   // 检查系统模式和认证状态
   const checkAuth = async () => {
     try {
-      // 1. 获取系统模式
+      const initStatus = await getInitStatus();
+      setNeedsInit(!!initStatus.needs_init);
+      setNeedsRebuild(!!initStatus.needs_rebuild);
+
+      if (initStatus.needs_init) {
+        setIsMultiUserMode(true);
+        setCurrentUser(null);
+        return;
+      }
+
       const modeData = await getAuthMode();
-      setIsMultiUserMode(modeData.multi_user_mode);
+      setIsMultiUserMode(!!modeData.multi_user_mode);
 
       // 2. 如果是多用户模式，检查登录状态
       if (modeData.multi_user_mode) {
@@ -61,6 +72,8 @@ export function AuthProvider({ children }) {
     isAdmin: currentUser?.is_admin || false,
     isMultiUserMode,
     loading,
+    needsInit,
+    needsRebuild,
     login,
     logout,
     checkAuth,

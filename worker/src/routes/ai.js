@@ -4,10 +4,71 @@
  */
 
 import { Hono } from 'hono';
-import { getCurrentUser } from '../auth.js';
+import { getCurrentUser, hasAdminUser } from '../auth.js';
 import { aiService } from '../services/ai.js';
 
 const ai = new Hono();
+
+ai.post('/chat', async (c) => {
+  const multiUserMode = await hasAdminUser(c.env.DB);
+  const user = await getCurrentUser(c);
+  if (multiUserMode && !user) return c.json({ detail: '未登录' }, 401);
+
+  const body = await c.req.json();
+  const { messages, stream, temperature, max_tokens, top_p } = body || {};
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return c.json({ detail: 'messages 不能为空' }, 400);
+  }
+
+  let settings = { apiBase: '', apiKey: '', model: '' };
+  try {
+    settings = await aiService.getAISettings(c.env.DB, c.env, user?.id ?? null);
+  } catch {
+    settings = { apiBase: '', apiKey: '', model: '' };
+  }
+
+  const apiBase = (c.env.NVIDIA_API_BASE || settings.apiBase || 'https://integrate.api.nvidia.com/v1').replace(/\/$/, '');
+  const apiKey = c.env.NVIDIA_API_KEY || settings.apiKey;
+  const model = c.env.NVIDIA_MODEL || settings.model || 'meta/llama-3.1-70b-instruct';
+
+  if (!apiKey) {
+    return c.json({ detail: '未配置 NVIDIA_API_KEY。也可在 系统设置 → AI 配置 中填写 OPENAI_API_KEY（可直接填 NVIDIA Key）后重试。' }, 500);
+  }
+
+  const resp = await fetch(`${apiBase}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: !!stream,
+      temperature: typeof temperature === 'number' ? temperature : 0.2,
+      top_p: typeof top_p === 'number' ? top_p : 0.9,
+      max_tokens: typeof max_tokens === 'number' ? max_tokens : 2048,
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    return c.json({ detail: errText || `上游返回 ${resp.status}` }, 500);
+  }
+
+  if (stream) {
+    return new Response(resp.body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    });
+  }
+
+  const data = await resp.json();
+  return c.json(data);
+});
 
 // POST /api/ai/analyze
 ai.post('/analyze', async (c) => {

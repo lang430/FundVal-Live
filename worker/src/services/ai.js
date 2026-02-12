@@ -14,32 +14,50 @@ export class AIService {
    * Get AI settings for a user
    */
   async getAISettings(db, env, userId) {
-    let rows;
-    if (userId == null) {
-      const result = await db.prepare(
-        'SELECT key, value, encrypted FROM settings WHERE user_id IS NULL'
-      ).all();
-      rows = result.results;
-    } else {
-      const result = await db.prepare(
-        'SELECT key, value, encrypted FROM settings WHERE user_id = ?'
-      ).bind(userId).all();
-      rows = result.results;
+    const loadSettings = async (targetUserId) => {
+      let rows = [];
+      if (targetUserId == null) {
+        const result = await db.prepare(
+          'SELECT key, value, encrypted FROM settings WHERE user_id IS NULL'
+        ).all();
+        rows = result.results || [];
+      } else {
+        const result = await db.prepare(
+          'SELECT key, value, encrypted FROM settings WHERE user_id = ?'
+        ).bind(targetUserId).all();
+        rows = result.results || [];
+      }
+
+      const settingsObj = {};
+      for (const row of rows) {
+        let value = row.value;
+        if (row.encrypted && value) {
+          value = await decryptValue(value, env);
+        }
+        settingsObj[row.key] = value;
+      }
+      return settingsObj;
+    };
+
+    const globalSettings = await loadSettings(null);
+    let adminSettings = {};
+    if (userId != null) {
+      const adminRow = await db.prepare(
+        'SELECT id FROM users WHERE is_admin = 1 ORDER BY id LIMIT 1'
+      ).first();
+
+      if (adminRow?.id && adminRow.id !== userId) {
+        adminSettings = await loadSettings(adminRow.id);
+      }
     }
 
-    const settings = {};
-    for (const row of rows) {
-      let value = row.value;
-      if (row.encrypted && value) {
-        value = await decryptValue(value, env);
-      }
-      settings[row.key] = value;
-    }
+    const userSettings = userId != null ? await loadSettings(userId) : {};
+    const settings = { ...globalSettings, ...adminSettings, ...userSettings };
 
     return {
-      apiBase: env.OPENAI_API_BASE || settings.OPENAI_API_BASE || 'https://api.openai.com/v1',
-      apiKey: env.OPENAI_API_KEY || settings.OPENAI_API_KEY || '',
-      model: env.AI_MODEL_NAME || settings.AI_MODEL_NAME || 'gpt-3.5-turbo',
+      apiBase: env.OPENAI_API_BASE || settings.OPENAI_API_BASE || 'https://integrate.api.nvidia.com/v1',
+      apiKey: env.OPENAI_API_KEY || settings.OPENAI_API_KEY || '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',
+      model: env.AI_MODEL_NAME || settings.AI_MODEL_NAME || 'deepseek-ai/deepseek-v3.2',
     };
   }
 

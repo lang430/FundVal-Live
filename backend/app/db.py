@@ -363,9 +363,9 @@ def init_db():
 
     # Initialize default system settings (user_id = NULL)
     default_settings = [
-        ('OPENAI_API_KEY', '', 1, None),
-        ('OPENAI_API_BASE', 'https://api.openai.com/v1', 0, None),
-        ('AI_MODEL_NAME', 'gpt-3.5-turbo', 0, None),
+        ('OPENAI_API_KEY', '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', 1, None),
+        ('OPENAI_API_BASE', 'https://integrate.api.nvidia.com/v1', 0, None),
+        ('AI_MODEL_NAME', 'deepseek-ai/deepseek-v3.2', 0, None),
         ('SMTP_HOST', 'smtp.gmail.com', 0, None),
         ('SMTP_PORT', '587', 0, None),
         ('SMTP_USER', '', 0, None),

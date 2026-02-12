@@ -8,7 +8,7 @@ const API_BASE = '/api';
  * 获取所有用户列表
  */
 export async function getUsers() {
-  const response = await fetch(`${API_BASE}/auth/admin/users`, {
+  const response = await fetch(`${API_BASE}/auth/users`, {
     credentials: 'include',
   });
 
@@ -24,7 +24,7 @@ export async function getUsers() {
  * 创建用户
  */
 export async function createUser(username, password, isAdmin = false) {
-  const response = await fetch(`${API_BASE}/auth/admin/users`, {
+  const response = await fetch(`${API_BASE}/auth/users`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export async function createUser(username, password, isAdmin = false) {
  * 删除用户
  */
 export async function deleteUser(userId) {
-  const response = await fetch(`${API_BASE}/auth/admin/users/${userId}`, {
+  const response = await fetch(`${API_BASE}/auth/users/${userId}`, {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -66,7 +66,7 @@ export async function deleteUser(userId) {
  * 获取注册开关状态
  */
 export async function getAllowRegistration() {
-  const response = await fetch(`${API_BASE}/auth/admin/settings/allow-registration`, {
+  const response = await fetch(`${API_BASE}/auth/registration`, {
     credentials: 'include',
   });
 
@@ -75,19 +75,20 @@ export async function getAllowRegistration() {
     throw new Error(error.detail || 'Failed to get registration setting');
   }
 
-  return response.json();
+  const data = await response.json();
+  return { allow_registration: !!data.registration_enabled };
 }
 
 /**
  * 设置注册开关
  */
 export async function setAllowRegistration(allow) {
-  const response = await fetch(`${API_BASE}/auth/admin/settings/allow-registration`, {
-    method: 'PUT',
+  const response = await fetch(`${API_BASE}/auth/registration`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ allow }),
+    body: JSON.stringify({ enabled: !!allow }),
     credentials: 'include',
   });
 
@@ -96,27 +97,29 @@ export async function setAllowRegistration(allow) {
     throw new Error(error.detail || 'Failed to update registration setting');
   }
 
-  return response.json();
+  const data = await response.json();
+  return { allow_registration: !!data.registration_enabled };
 }
 
 /**
  * 开启多用户模式
  */
 export async function enableMultiUser(adminUsername, adminPassword) {
-  const response = await fetch(`${API_BASE}/auth/admin/enable-multi-user`, {
+  const response = await fetch(`${API_BASE}/auth/init`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      admin_username: adminUsername,
-      admin_password: adminPassword,
+      username: adminUsername,
+      password: adminPassword,
     }),
+    credentials: 'include',
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || 'Failed to enable multi-user mode');
+    throw new Error(error.detail || 'Failed to init admin');
   }
 
   return response.json();

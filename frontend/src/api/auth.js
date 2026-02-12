@@ -8,10 +8,68 @@ const API_BASE = '/api';
  * 获取系统模式
  */
 export async function getAuthMode() {
-  const response = await fetch(`${API_BASE}/auth/mode`);
+  const response = await fetch(`${API_BASE}/auth/mode`, {
+    credentials: 'include',
+  });
   if (!response.ok) {
     throw new Error('Failed to get auth mode');
   }
+  return response.json();
+}
+
+export async function getRegistrationStatus() {
+  const response = await fetch(`${API_BASE}/auth/registration`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to get registration status');
+  }
+  return response.json();
+}
+
+export async function setRegistrationStatus(enabled) {
+  const response = await fetch(`${API_BASE}/auth/registration`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ enabled: !!enabled }),
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to update registration status');
+  }
+
+  return response.json();
+}
+
+export async function getInitStatus() {
+  const response = await fetch(`${API_BASE}/auth/init-status`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to get init status');
+  }
+  return response.json();
+}
+
+export async function initAdmin(username, password) {
+  const response = await fetch(`${API_BASE}/auth/init`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Init failed');
+  }
+
   return response.json();
 }
 
