@@ -103,19 +103,31 @@ class AIService:
                 value = decrypt_value(value)
             settings[key] = value
 
-        api_base = settings.get("OPENAI_API_BASE") or "https://api.openai.com/v1"
+        api_base = settings.get("OPENAI_API_BASE") or "https://integrate.api.nvidia.com/v1"
         api_key = settings.get("OPENAI_API_KEY") or ""
-        model = settings.get("AI_MODEL_NAME") or "gpt-3.5-turbo"
+        model = settings.get("AI_MODEL_NAME") or "deepseek-ai/deepseek-v3.2"
 
         if not api_key:
             return None
+
+        # NVIDIA DeepSeek specific configuration
+        model_kwargs = {}
+        if "deepseek" in model.lower() and "nvidia" in api_base.lower():
+            model_kwargs = {
+                "extra_body": {
+                    "chat_template_kwargs": {
+                        "thinking": True
+                    }
+                }
+            }
 
         return ChatOpenAI(
             model=model,
             openai_api_key=api_key,
             openai_api_base=api_base,
-            temperature=0.3, # Linus needs to be sharp, not creative
-            request_timeout=60 if fast_mode else 120
+            temperature=0.6 if "deepseek" in model.lower() else 0.3, # Slightly higher temp for DeepSeek thinking
+            request_timeout=60 if fast_mode else 120,
+            model_kwargs=model_kwargs
         )
 
     def search_news(self, query: str) -> str:

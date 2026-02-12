@@ -47,6 +47,7 @@ export default function MainLayout({
           onSearchSelect={onSearchSelect}
           isMultiUserMode={isMultiUserMode}
           onMenuClick={() => setIsMobileMenuOpen(true)}
+          logout={logout}
         />
         
         <main className="p-4 md:p-8">

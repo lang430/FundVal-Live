@@ -29,12 +29,15 @@ export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, 
         isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
     }`}>
       {/* Logo Area */}
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+      <div 
+        className="p-6 flex items-center gap-3 cursor-pointer group"
+        onClick={() => setCurrentView('dashboard')}
+      >
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform duration-300">
           <Wallet className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500">
+          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 group-hover:from-blue-600 group-hover:to-indigo-600 transition-all duration-300">
             FundVal
           </h1>
           <p className="text-xs text-slate-400 tracking-wider">LIVE MONITOR</p>

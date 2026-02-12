@@ -83,8 +83,8 @@ class Config:
 
     # AI Configuration - 动态读取
     OPENAI_API_KEY = _get_setting("OPENAI_API_KEY", "")
-    OPENAI_API_BASE = _get_setting("OPENAI_API_BASE", "https://api.openai.com/v1")
-    AI_MODEL_NAME = _get_setting("AI_MODEL_NAME", "gpt-3.5-turbo")
+    OPENAI_API_BASE = _get_setting("OPENAI_API_BASE", "https://integrate.api.nvidia.com/v1")
+    AI_MODEL_NAME = _get_setting("AI_MODEL_NAME", "deepseek-ai/deepseek-v3.2")
 
     # Email / Subscription Configuration - 动态读取
     SMTP_HOST = _get_setting("SMTP_HOST", "smtp.gmail.com")
@@ -96,9 +96,9 @@ class Config:
     @classmethod
     def reload(cls):
         """重新加载配置（在设置更新后调用）"""
-        cls.OPENAI_API_KEY = _get_setting("OPENAI_API_KEY", "")
-        cls.OPENAI_API_BASE = _get_setting("OPENAI_API_BASE", "https://api.openai.com/v1")
-        cls.AI_MODEL_NAME = _get_setting("AI_MODEL_NAME", "gpt-3.5-turbo")
+        cls.OPENAI_API_KEY = _get_setting("OPENAI_API_KEY", "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")
+        cls.OPENAI_API_BASE = _get_setting("OPENAI_API_BASE", "https://integrate.api.nvidia.com/v1")
+        cls.AI_MODEL_NAME = _get_setting("AI_MODEL_NAME", "deepseek-ai/deepseek-v3.2")
         cls.SMTP_HOST = _get_setting("SMTP_HOST", "smtp.gmail.com")
         cls.SMTP_PORT = int(_get_setting("SMTP_PORT", "587"))
         cls.SMTP_USER = _get_setting("SMTP_USER", "")
