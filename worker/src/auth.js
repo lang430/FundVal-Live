@@ -183,6 +183,7 @@ export async function requireAdmin(c, next) {
  */
 export async function verifyAccountOwnership(db, accountId, user) {
   if (!user) return false;
+  if (user.isAdmin) return true;
   const row = await db.prepare(
     'SELECT user_id FROM accounts WHERE id = ?'
   ).bind(accountId).first();

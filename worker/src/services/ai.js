@@ -56,7 +56,7 @@ export class AIService {
 
     return {
       apiBase: env.OPENAI_API_BASE || settings.OPENAI_API_BASE || 'https://integrate.api.nvidia.com/v1',
-      apiKey: env.OPENAI_API_KEY || settings.OPENAI_API_KEY || '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',
+      apiKey: env.OPENAI_API_KEY || settings.OPENAI_API_KEY || '',
       model: env.AI_MODEL_NAME || settings.AI_MODEL_NAME || 'deepseek-ai/deepseek-v3.2',
     };
   }
