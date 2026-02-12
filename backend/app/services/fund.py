@@ -133,9 +133,12 @@ def get_eastmoney_valuation(code: str) -> Dict[str, Any]:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36)"
     }
     try:
+        logger.info(f"Requesting Eastmoney Valuation: {url}")
         response = _get_http_session().get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             text = response.text
+            logger.info(f"Eastmoney Valuation Response for {code}: {text[:2000]}...")  # Log first 2000 chars to avoid massive logs if any
+
             # Regex to capture JSON content inside jsonpgz(...)
             # Allow optional semicolon at end
             match = re.search(r"jsonpgz\((.*)\)", text)
@@ -161,8 +164,11 @@ def get_sina_valuation(code: str) -> Dict[str, Any]:
     url = f"http://hq.sinajs.cn/list=fu_{code}"
     headers = {"Referer": "http://finance.sina.com.cn"}
     try:
+        logger.info(f"Requesting Sina Valuation: {url}")
         response = _get_http_session().get(url, headers=headers, timeout=5)
         text = response.text
+        logger.info(f"Sina Valuation Response for {code}: {text}")
+
         # var hq_str_fu_005827="Name,15:00:00,1.234,1.230,...";
         match = re.search(r'="(.*)"', text)
         if match and match.group(1):
@@ -318,9 +324,13 @@ def get_eastmoney_pingzhong_data(code: str) -> Dict[str, Any]:
     """
     url = Config.EASTMONEY_DETAILED_API_URL.format(code=code)
     try:
+        logger.info(f"Requesting Eastmoney PingZhong Data: {url}")
         response = _get_http_session().get(url, timeout=5)
         if response.status_code == 200:
             text = response.text
+            # Log a chunk of the response since PingZhong data can be very large
+            logger.info(f"Eastmoney PingZhong Response for {code} (first 1000 chars): {text[:1000]}...")
+
             data = {}
             name_match = re.search(r'fS_name\s*=\s*"(.*?)";', text)
             if name_match: data["name"] = name_match.group(1)
@@ -445,7 +455,10 @@ def _fetch_stock_spots_sina(codes: List[str]) -> Dict[str, float]:
     headers = {"Referer": "http://finance.sina.com.cn"}
     
     try:
+        logger.info(f"Requesting Sina Stock Spots: {url}")
         response = _get_http_session().get(url, headers=headers, timeout=5)
+        logger.info(f"Sina Stock Spots Response: {response.text}")
+
         results = {}
         for line in response.text.strip().split('\n'):
             if not line or '=' not in line or '"' not in line: continue
