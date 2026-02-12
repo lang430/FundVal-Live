@@ -97,8 +97,8 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
     <div className="space-y-6">
       {/* Aggregated View Notice */}
       {isAggregatedView && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-800">
+        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 backdrop-blur-sm">
+          <p className="text-sm text-blue-300">
             <strong>正在查看全部账户的汇总数据</strong> - 相同基金的持仓已自动合并（份额相加，成本加权平均）。汇总视图仅供查看，不支持修改操作。
           </p>
         </div>
@@ -106,20 +106,20 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
+        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 flex items-center justify-between backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="text-red-600">
+            <div className="text-red-400">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
             </div>
             <div>
-              <p className="text-sm font-medium text-red-800">{error}</p>
+              <p className="text-sm font-medium text-red-300">{error}</p>
             </div>
           </div>
           <button
             onClick={() => refetch()}
-            className="text-sm font-medium text-red-600 hover:text-red-700 underline"
+            className="text-sm font-medium text-red-400 hover:text-red-300 underline"
           >
             重试
           </button>
@@ -128,13 +128,13 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
 
       {/* Portfolio Overview */}
       {loading && !data.positions.length ? (
-        <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-slate-100 animate-pulse">
-          <div className="h-8 bg-slate-200 rounded w-1/3 mb-4"></div>
-          <div className="h-32 bg-slate-200 rounded mb-4"></div>
+        <div className="w-full bg-slate-800/40 rounded-2xl p-6 shadow-sm border border-slate-700/50 animate-pulse">
+          <div className="h-8 bg-slate-700 rounded w-1/3 mb-4"></div>
+          <div className="h-32 bg-slate-700 rounded mb-4"></div>
           <div className="grid grid-cols-3 gap-4">
-            <div className="h-20 bg-slate-200 rounded"></div>
-            <div className="h-20 bg-slate-200 rounded"></div>
-            <div className="h-20 bg-slate-200 rounded"></div>
+            <div className="h-20 bg-slate-700 rounded"></div>
+            <div className="h-20 bg-slate-700 rounded"></div>
+            <div className="h-20 bg-slate-700 rounded"></div>
           </div>
         </div>
       ) : (
@@ -147,7 +147,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
       <div className="space-y-4">
         {/* 第一行：标题 + 操作按钮 */}
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-slate-800">
+          <h2 className="text-xl font-bold text-slate-200">
             {isAggregatedView ? '全部账户持仓汇总' : '持仓明细'}
           </h2>
           <div className="flex gap-2">
@@ -155,7 +155,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
             <div className="relative" ref={sortDropdownRef}>
               <button
                 onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-                className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                className="flex items-center gap-2 bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:text-blue-400 hover:border-blue-500/30 px-4 py-2 rounded-lg transition-colors text-sm font-medium backdrop-blur"
               >
                 <ArrowUpDown className="w-4 h-4" />
                 排序
@@ -163,15 +163,15 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
               </button>
 
               {sortDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1">
+                <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 py-1 backdrop-blur-xl">
                   {SORT_OPTIONS.map((option, index) => (
                     <button
                       key={index}
                       onClick={() => handleSortChange(option)}
                       className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                         sortOption.label === option.label
-                          ? 'bg-blue-50 text-blue-600 font-medium'
-                          : 'text-slate-700 hover:bg-slate-50'
+                          ? 'bg-blue-600/20 text-blue-400 font-medium'
+                          : 'text-slate-300 hover:bg-slate-700/50'
                       }`}
                     >
                       {option.label}
@@ -184,7 +184,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
             <button
               onClick={handleSync}
               disabled={syncLoading || positionSyncLoading}
-              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 px-4 py-2 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:text-blue-400 hover:border-blue-500/30 px-4 py-2 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur"
               title="将持仓基金添加到关注列表"
             >
               <RefreshCw className={`w-4 h-4 ${(syncLoading || positionSyncLoading) ? 'animate-spin' : ''}`} />
@@ -193,7 +193,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
             <button
               onClick={handleUpdateNav}
               disabled={navUpdating}
-              className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:text-green-600 hover:border-green-200 px-4 py-2 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:text-green-400 hover:border-green-500/30 px-4 py-2 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur"
               title="手动更新所有持仓基金的净值"
             >
               <Download className={`w-4 h-4 ${navUpdating ? 'animate-spin' : ''}`} />
@@ -202,7 +202,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
             {!isAggregatedView && (
               <button
                 onClick={() => handleOpenModal()}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-lg shadow-blue-500/20"
               >
                 <Plus className="w-4 h-4" />
                 记一笔
@@ -212,7 +212,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
         </div>
 
         {/* 第二行：分类筛选器 */}
-        <div className="flex gap-1 bg-slate-50 p-1 rounded-lg w-fit">
+        <div className="flex gap-1 bg-slate-800/40 p-1 rounded-lg w-fit border border-slate-700/30 backdrop-blur">
           {CATEGORIES.map(cat => (
             <button
               key={cat}
@@ -220,7 +220,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 selectedCategory === cat
                   ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-white hover:text-blue-600'
+                  : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
               }`}
             >
               {cat} ({categoryCounts[cat]})
@@ -230,42 +230,42 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+      <div className="bg-slate-800/40 rounded-xl shadow-sm border border-slate-700/50 backdrop-blur overflow-hidden">
         <div>
           <table className="w-full text-base text-left border-collapse">
-            <thead className="bg-slate-50 text-slate-500 font-medium text-xs uppercase tracking-wider sticky top-[73px] z-30 shadow-sm">
+            <thead className="bg-slate-900/50 text-slate-400 font-medium text-xs uppercase tracking-wider sticky top-[73px] z-30 shadow-sm backdrop-blur">
               <tr>
-                <th className="px-4 py-3 text-left border-b border-slate-100 bg-slate-50 rounded-tl-xl">
+                <th className="px-4 py-3 text-left border-b border-slate-700/50">
                   <div>基金信息</div>
-                  <div className="text-[10px] text-slate-400 normal-case mt-0.5">持有总收益%</div>
+                  <div className="text-[10px] text-slate-500 normal-case mt-0.5">持有总收益%</div>
                 </th>
-                <th className="px-4 py-3 text-right border-b border-slate-100 bg-slate-50">
+                <th className="px-4 py-3 text-right border-b border-slate-700/50">
                   <div>预估净值</div>
-                  <div className="text-[10px] text-slate-400 normal-case mt-0.5">昨日净值</div>
+                  <div className="text-[10px] text-slate-500 normal-case mt-0.5">昨日净值</div>
                 </th>
-                <th className="px-4 py-3 text-right border-b border-slate-100 bg-slate-50">
+                <th className="px-4 py-3 text-right border-b border-slate-700/50">
                   <div>预估收益</div>
-                  <div className="text-[10px] text-slate-400 normal-case mt-0.5">涨跌%</div>
+                  <div className="text-[10px] text-slate-500 normal-case mt-0.5">涨跌%</div>
                 </th>
-                <th className="px-4 py-3 text-right border-b border-slate-100 bg-slate-50">
+                <th className="px-4 py-3 text-right border-b border-slate-700/50">
                   <div>持有总值</div>
-                  <div className="text-[10px] text-slate-400 normal-case mt-0.5">持有收益</div>
+                  <div className="text-[10px] text-slate-500 normal-case mt-0.5">持有收益</div>
                 </th>
-                <th className="px-4 py-3 text-right border-b border-slate-100 bg-slate-50">
+                <th className="px-4 py-3 text-right border-b border-slate-700/50">
                   <div>份额</div>
-                  <div className="text-[10px] text-slate-400 normal-case mt-0.5">成本</div>
+                  <div className="text-[10px] text-slate-500 normal-case mt-0.5">成本</div>
                 </th>
-                <th className="px-4 py-3 text-right border-b border-slate-100 bg-slate-50">
+                <th className="px-4 py-3 text-right border-b border-slate-700/50">
                   <div>预估总收益</div>
-                  <div className="text-[10px] text-slate-400 normal-case mt-0.5">预估总收益%</div>
+                  <div className="text-[10px] text-slate-500 normal-case mt-0.5">预估总收益%</div>
                 </th>
-                <th className="px-4 py-3 text-center border-b border-slate-100 bg-slate-50 rounded-tr-xl">操作</th>
+                <th className="px-4 py-3 text-center border-b border-slate-700/50">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-base">
+            <tbody className="divide-y divide-slate-700/30 text-base">
               {sortedPositions.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan="7" className="px-4 py-8 text-center text-slate-500">
                     暂无持仓，快去记一笔吧
                   </td>
                 </tr>
@@ -279,7 +279,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
                 const hasValidEstimate = pos.estimate > 0;
 
                 return (
-                  <tr key={pos.code} className="hover:bg-slate-50 transition-colors">
+                  <tr key={pos.code} className="hover:bg-slate-700/30 transition-colors group/row">
                     {/* Fund Info Column */}
                     <td
                       className="px-4 py-3 cursor-pointer group max-w-[220px]"
@@ -287,10 +287,10 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-slate-800 group-hover:text-blue-600 transition-colors truncate" title={pos.name}>
+                          <div className="font-medium text-slate-200 group-hover:text-blue-400 transition-colors truncate" title={pos.name}>
                             {pos.name}
                           </div>
-                          <div className="text-xs text-slate-400 font-mono">{pos.code}</div>
+                          <div className="text-xs text-slate-500 font-mono">{pos.code}</div>
                         </div>
                         <div className={`text-sm font-semibold whitespace-nowrap ${getRateColor(pos.accumulated_return_rate)}`}>
                           {pos.accumulated_return_rate > 0 ? '+' : ''}{pos.accumulated_return_rate.toFixed(2)}%
@@ -302,7 +302,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
                     <td className="px-4 py-3 text-right font-mono">
                       <div className="flex items-center justify-end gap-1">
                         <div
-                          className={`font-medium ${!hasValidEstimate ? 'text-slate-300' : getRateColor(pos.est_rate)}`}
+                          className={`font-medium ${!hasValidEstimate ? 'text-slate-500' : getRateColor(pos.est_rate)}`}
                           title={!pos.is_est_valid && hasValidEstimate ? "ML估算" : "实时估值"}
                         >
                           {hasValidEstimate ? pos.estimate.toFixed(4) + (!pos.is_est_valid ? '*' : '') : '--'}
@@ -313,24 +313,24 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
                         {pos.nav_updated_today ? (
                           <CheckCircle className="w-3 h-3 text-green-500" title="当日净值已更新" />
                         ) : (
-                          <Clock className="w-3 h-3 text-slate-300" title="当日净值未更新" />
+                          <Clock className="w-3 h-3 text-slate-600" title="当日净值未更新" />
                         )}
                       </div>
                     </td>
 
                     {/* Intraday PnL Column */}
                     <td className="px-4 py-3 text-right font-mono">
-                      <div className={`font-medium ${!hasValidEstimate ? 'text-slate-300' : getRateColor(displayDayIncome)}`}>
+                      <div className={`font-medium ${!hasValidEstimate ? 'text-slate-500' : getRateColor(displayDayIncome)}`}>
                         {hasValidEstimate ? (displayDayIncome > 0 ? '+' : '') + displayDayIncome.toFixed(2) + (!pos.is_est_valid ? '*' : '') : '--'}
                       </div>
-                      <div className={`text-xs mt-0.5 ${!hasValidEstimate ? 'text-slate-300' : getRateColor(pos.est_rate)}`}>
+                      <div className={`text-xs mt-0.5 ${!hasValidEstimate ? 'text-slate-500' : getRateColor(pos.est_rate)}`}>
                         {hasValidEstimate ? (pos.est_rate > 0 ? '+' : '') + pos.est_rate.toFixed(2) + '%' + (!pos.is_est_valid ? '*' : '') : '--'}
                       </div>
                     </td>
 
                     {/* Holding Value / Income (Yesterday) */}
                     <td className="px-4 py-3 text-right font-mono">
-                      <div className="text-slate-800 font-medium">
+                      <div className="text-slate-200 font-medium">
                         {pos.nav_market_value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                       </div>
                       <div className={`text-xs mt-0.5 ${getRateColor(pos.accumulated_income)}`}>
@@ -339,9 +339,9 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
                     </td>
 
                     {/* Shares / Cost Column */}
-                    <td className="px-4 py-3 text-right font-mono text-slate-600">
+                    <td className="px-4 py-3 text-right font-mono text-slate-400">
                       <div className="text-sm">{pos.shares.toLocaleString()}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{pos.cost.toFixed(4)}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">{pos.cost.toFixed(4)}</div>
                     </td>
 
                     {/* Total Projected PnL Column */}
@@ -361,14 +361,14 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
                           <>
                             <button
                               onClick={() => handleOpenModal(pos)}
-                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-colors"
                               title="修改持仓"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeletePosition(pos.code)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
                               title="删除"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -376,7 +376,7 @@ const Account = ({ currentAccount = 1, onSelectFund, onPositionChange, onSyncWat
                           </>
                         )}
                         {isAggregatedView && (
-                          <span className="text-xs text-slate-400">仅查看</span>
+                          <span className="text-xs text-slate-500">仅查看</span>
                         )}
                       </div>
                     </td>

@@ -44,8 +44,8 @@ export const FundList = ({ watchlist, setWatchlist, onSelectFund, onSubscribe, o
     <>
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         {/* Header / Stats */}
-        <div className="text-xs text-slate-500 px-1">
-          <span className="font-bold text-slate-700 text-sm">我的关注 ({watchlist.length})</span>
+        <div className="text-xs text-slate-400 px-1">
+          <span className="font-bold text-slate-200 text-sm">我的关注 ({watchlist.length})</span>
           <span className="ml-3 inline-flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
             实时更新
@@ -55,15 +55,15 @@ export const FundList = ({ watchlist, setWatchlist, onSelectFund, onSubscribe, o
         {/* Controls */}
         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
             {/* Sector Filter */}
-            <div className="flex bg-white border border-slate-200 rounded-lg p-1">
+            <div className="flex bg-slate-800/50 border border-slate-700/50 rounded-lg p-1 backdrop-blur">
                 {categories.map(s => (
                     <button
                         key={s}
                         onClick={() => setFilterSector(s)}
                         className={`px-3 py-1 text-xs rounded-md transition-colors whitespace-nowrap ${
                             filterSector === s
-                            ? 'bg-blue-100 text-blue-700 font-medium'
-                            : 'text-slate-500 hover:bg-slate-50'
+                            ? 'bg-blue-600 text-white font-medium shadow-sm'
+                            : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
                         }`}
                     >
                         {s}
@@ -74,7 +74,7 @@ export const FundList = ({ watchlist, setWatchlist, onSelectFund, onSubscribe, o
             {/* Sort Toggle */}
             <button 
                 onClick={() => setSortType(prev => prev === 'rate_desc' ? 'rate_asc' : 'rate_desc')}
-                className="flex items-center gap-1 bg-white border border-slate-200 text-slate-600 px-3 py-1 rounded-lg text-xs hover:bg-slate-50 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1 bg-slate-800/50 border border-slate-700/50 text-slate-400 px-3 py-1 rounded-lg text-xs hover:bg-slate-700/50 hover:text-slate-200 transition-colors whitespace-nowrap backdrop-blur"
             >
                 <ArrowUpDown className="w-3 h-3" />
                 {sortType === 'default' ? '排序' : sortType === 'rate_desc' ? '涨幅 ↓' : '涨幅 ↑'}
@@ -94,16 +94,16 @@ export const FundList = ({ watchlist, setWatchlist, onSelectFund, onSubscribe, o
         ))}
 
         {watchlist.length === 0 && (
-          <div className="col-span-1 md:col-span-2 py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
-            <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <div className="col-span-1 md:col-span-2 py-12 text-center text-slate-500 border-2 border-dashed border-slate-700/30 rounded-xl bg-slate-800/20">
+            <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p>暂无关注基金，请在上方搜索添加代码</p>
           </div>
         )}
         
         {watchlist.length > 0 && processedList.length === 0 && (
-             <div className="col-span-1 md:col-span-2 py-12 text-center text-slate-400">
+             <div className="col-span-1 md:col-span-2 py-12 text-center text-slate-500">
                 <p>没有找到匹配板块的基金</p>
-                <button onClick={() => setFilterSector("全部")} className="text-blue-600 text-xs mt-2 hover:underline">清除筛选</button>
+                <button onClick={() => setFilterSector("全部")} className="text-blue-400 text-xs mt-2 hover:underline">清除筛选</button>
              </div>
         )}
       </div>

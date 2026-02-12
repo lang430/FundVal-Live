@@ -8,10 +8,10 @@ export const getRateColor = (rate) => {
 
 export const StatCard = ({ label, value, subValue, highlight = false, isRate = false, large = false }) => (
   <div className="flex flex-col">
-    <span className="text-xs text-gray-400 mb-1">{label}</span>
-    <div className={`${large ? 'text-2xl md:text-3xl' : 'text-lg'} font-mono font-medium ${highlight ? getRateColor(parseFloat(value)) : 'text-slate-800'}`}>
+    <span className="text-xs text-slate-500 mb-1">{label}</span>
+    <div className={`${large ? 'text-2xl md:text-3xl' : 'text-lg'} font-mono font-medium ${highlight ? getRateColor(parseFloat(value)) : 'text-slate-200'}`}>
       {value}{isRate ? '%' : ''}
     </div>
-    {subValue && <span className="text-xs text-gray-400">{subValue}</span>}
+    {subValue && <span className="text-xs text-slate-500">{subValue}</span>}
   </div>
 );

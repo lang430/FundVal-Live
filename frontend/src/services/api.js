@@ -148,6 +148,10 @@ export const deletePrompt = async (id) => {
 };
 
 // AI Analysis History
+export const analyzeFundAI = async (fundCode) => {
+    return api.post('/ai/analyze', { fund_code: fundCode });
+};
+
 export const getAnalysisHistory = async (fundCode, accountId, params = {}) => {
     try {
         const response = await api.get('/ai/analysis_history', {
