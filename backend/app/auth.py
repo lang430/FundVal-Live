@@ -177,7 +177,7 @@ def cleanup_expired_sessions():
 def delete_session(session_id: str):
     """
     删除 session
-
+    
     Args:
         session_id: session ID
     """

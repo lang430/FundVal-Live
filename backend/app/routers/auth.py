@@ -263,25 +263,30 @@ def login(request: LoginRequest, response: Response):
     )
 
 @router.post("/logout")
-def logout(request: Request, response: Response, user: User = Depends(require_auth)):
+def logout(request: Request, response: Response):
     """
-    登出
-
+    登出 (Lenient Logout)
+    
     Args:
         request: FastAPI Request 对象
         response: FastAPI Response 对象
-        user: 当前用户（通过 require_auth 获取）
 
     Returns:
         dict: 成功消息
     """
-    # 删除服务端 session
+    # 尝试从未过期的 cookie 中获取 session_id
     session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    
+    # 无论 session 是否有效，都尝试清除后端 session
     if session_id:
         delete_session(session_id)
 
-    # 清除客户端 cookie
-    response.delete_cookie(key=SESSION_COOKIE_NAME)
+    # 无论如何都清除客户端 cookie
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        httponly=True,
+        samesite="lax"
+    )
 
     return {"message": "登出成功"}
 

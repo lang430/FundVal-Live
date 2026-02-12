@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FundList } from './pages/FundList';
 import { FundDetail } from './pages/FundDetail';
 import Account from './pages/Account';
@@ -10,7 +10,8 @@ import AiChat from './pages/AiChat';        // New
 import MainLayout from './components/layout/MainLayout'; // New
 import { SubscribeModal } from './components/SubscribeModal';
 import { AccountModal } from './components/AccountModal';
-import { getFundDetail, getAccountPositions, subscribeFund, getAccounts, getPreferences, updatePreferences } from './services/api';
+import ChangePasswordModal from './components/ChangePasswordModal';
+import { getFundDetail, subscribeFund, getAccounts, getPreferences, updatePreferences } from './services/api';
 import { useAuth } from './contexts/AuthContext';
 
 export default function App() {
@@ -44,9 +45,9 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false); // New state
   const [selectedFund, setSelectedFund] = useState(null);
   const [detailFundId, setDetailFundId] = useState(null);
-  const [accountCodes, setAccountCodes] = useState(new Set());
 
   const [syncLoading, setSyncLoading] = useState(false);
 
@@ -106,23 +107,27 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
   }, [currentAccount, preferencesLoaded]);
 
   // Load accounts
-  const loadAccounts = async () => {
-    const accs = await getAccounts();
-    setAccounts(accs);
-    if (accs.length > 0) {
-      const accountIds = accs.map(acc => acc.id);
-      if (!accountIds.includes(currentAccount) && currentAccount !== 0) {
-        const defaultAccountId = currentUser?.default_account_id;
-        if (defaultAccountId && accountIds.includes(defaultAccountId)) {
-          setCurrentAccount(defaultAccountId);
-        } else {
-          setCurrentAccount(accs[0].id);
+  const loadAccounts = React.useCallback(async () => {
+    try {
+      const accs = await getAccounts();
+      setAccounts(accs);
+      if (accs.length > 0) {
+        const accountIds = accs.map(acc => acc.id);
+        if (!accountIds.includes(currentAccount) && currentAccount !== 0) {
+          const defaultAccountId = currentUser?.default_account_id;
+          if (defaultAccountId && accountIds.includes(defaultAccountId)) {
+            setCurrentAccount(defaultAccountId);
+          } else {
+            setCurrentAccount(accs[0].id);
+          }
         }
       }
+    } catch (e) {
+      console.error('Failed to load accounts', e);
     }
-  };
+  }, [currentAccount, currentUser]);
 
-  useEffect(() => { loadAccounts(); }, []);
+  useEffect(() => { loadAccounts(); }, [loadAccounts]);
 
   // Poll for updates
   useEffect(() => {
@@ -260,6 +265,7 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
       logout={logout}
       currentUser={currentUser}
       onSearchSelect={handleSelectFund}
+      onChangePassword={() => setIsChangePasswordOpen(true)}
     >
       {currentView === 'dashboard' && (
         <Dashboard currentAccount={currentAccount} />
@@ -320,8 +326,7 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
         />
       )}
 
-      {/* Account Modal not strictly needed in sidebar layout if we integrate it differently, 
-          but keeping it for compatibility if Account component triggers it */}
+      {/* Account Modal */}
       {accountModalOpen && (
         <AccountModal
           accounts={accounts}
@@ -331,6 +336,12 @@ function AppContent({ currentUser, isMultiUserMode, isAdmin, logout }) {
           onSwitch={setCurrentAccount}
         />
       )}
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal 
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </MainLayout>
   );
 }
