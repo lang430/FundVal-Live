@@ -76,54 +76,81 @@ export default function Dashboard({ currentAccount }) {
   const isPositive = dayChange >= 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* 1. Hero Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Assets */}
+      {/* 1. Hero Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Total Assets - Compact Premium Card */}
         <div 
-          className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-6 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden group"
+          className="relative rounded-[1.5rem] p-6 text-white shadow-xl shadow-blue-500/20 overflow-hidden group transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/30 hover:-translate-y-1"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-110 transition-transform duration-500"></div>
+          {/* Advanced Gradient Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700"></div>
           
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 text-blue-100 mb-1">
-              <WalletIcon className="w-5 h-5" />
-              <span className="font-medium">总资产</span>
-            </div>
-            <div className="text-4xl font-bold tracking-tight mb-4">
-              ¥ {totalValue?.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}
-            </div>
-            <div className="flex items-center gap-4 text-sm">
-                <div className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
-                    今日 {dayChange > 0 ? '+' : ''}{dayChange?.toFixed(2)}
+          {/* Decorative Orbs */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-24 translate-x-16 blur-2xl group-hover:bg-white/20 transition-all duration-1000"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/30 rounded-full translate-y-16 -translate-x-8 blur-xl group-hover:bg-indigo-400/30 transition-all duration-1000"></div>
+          
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
+
+          <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-blue-100 mb-1">
+                <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-md border border-white/10 shadow-inner">
+                  <WalletIcon className="w-4 h-4" />
                 </div>
-                <div className={`${dayChangeRate >= 0 ? 'text-green-300' : 'text-red-300'} font-medium flex items-center`}>
-                    {dayChangeRate >= 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
-                    {Math.abs(dayChangeRate)?.toFixed(2)}%
+                <span className="font-medium text-sm opacity-90">总资产</span>
+              </div>
+              <div className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-100">
+                ¥ {(totalValue || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+                <div className="bg-white/20 px-3 py-1.5 rounded-lg backdrop-blur-md border border-white/10 shadow-sm flex items-center gap-2">
+                    <span className="text-xs font-medium text-blue-50">今日</span>
+                    <span className="text-sm font-bold text-white">
+                        {(dayChange || 0) > 0 ? '+' : ''}{(dayChange || 0).toFixed(2)}
+                    </span>
+                </div>
+                <div className={`px-3 py-1.5 rounded-lg backdrop-blur-md border border-white/10 shadow-sm flex items-center ${(!dayChangeRate || dayChangeRate >= 0) ? 'bg-emerald-400/20 text-emerald-50' : 'bg-rose-400/20 text-rose-50'}`}>
+                    {(!dayChangeRate || dayChangeRate >= 0) ? <TrendingUp className="w-3.5 h-3.5 mr-1.5" /> : <TrendingDown className="w-3.5 h-3.5 mr-1.5" />}
+                    <span className="font-bold text-sm">{Math.abs(dayChangeRate || 0).toFixed(2)}%</span>
                 </div>
             </div>
           </div>
         </div>
 
-        {/* Total Return */}
+        {/* Total Return - Compact Light Glass Card */}
         <div 
-          className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-3xl p-6 relative overflow-hidden"
+          className="bg-white/90 backdrop-blur-xl border border-white/50 rounded-[1.5rem] p-6 relative overflow-hidden shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300 group flex flex-col justify-between"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-slate-400">
-              <Activity className="w-5 h-5" />
-              <span>累计收益</span>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-slate-500">
+                <div className="p-1.5 bg-slate-100 rounded-lg text-slate-600 group-hover:bg-slate-200 transition-colors">
+                    <Activity className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-sm text-slate-700">累计收益</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${(!totalReturn || totalReturn >= 0) ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                成立以来
+                </span>
             </div>
-            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${totalReturn >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-              {totalReturnRate?.toFixed(2)}%
-            </span>
+            <div className={`text-3xl font-bold tracking-tight ${(!totalReturn || totalReturn >= 0) ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {(totalReturn || 0) > 0 ? '+' : ''}{(totalReturn || 0).toLocaleString()}
+            </div>
           </div>
-          <div className={`text-3xl font-bold mb-2 ${totalReturn >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {totalReturn > 0 ? '+' : ''}{totalReturn?.toLocaleString()}
+          
+          <div className="mt-3 flex items-center gap-2 relative z-10">
+               <span className={`text-sm font-semibold px-2 py-0.5 rounded-md ${(!totalReturnRate || totalReturnRate >= 0) ? 'bg-emerald-100/50 text-emerald-700' : 'bg-rose-100/50 text-rose-700'}`}>
+                 {(totalReturnRate || 0).toFixed(2)}%
+               </span>
+               <span className="text-xs text-slate-400">总收益率</span>
           </div>
           
           {/* Mini Chart */}
-          <div className="h-16 mt-4 -mx-2">
+          <div className="absolute bottom-0 left-0 right-0 h-16 opacity-40 mask-image-gradient pointer-events-none">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={marketTrend}>
                 <defs>
@@ -132,64 +159,84 @@ export default function Dashboard({ currentAccount }) {
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} fill="url(#colorValue)" />
+                <Area 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="#10b981" 
+                    strokeWidth={2} 
+                    fill="url(#colorValue)" 
+                    dot={false}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Compact Light Card */}
         <div 
-          className="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-3xl p-6 flex flex-col justify-center gap-4"
+          className="bg-white/90 backdrop-blur-xl border border-white/50 rounded-[1.5rem] p-6 flex flex-col gap-4 shadow-lg shadow-slate-200/50"
         >
-          <h3 className="text-slate-400 font-medium mb-2">快捷操作</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <button className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-slate-700/50 hover:bg-blue-600 hover:text-white transition-all group">
-                <div className="bg-slate-600/50 p-2 rounded-lg group-hover:bg-white/20">
+          <h3 className="text-slate-800 font-bold flex items-center gap-2 text-sm">
+            <span className="w-1 h-4 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></span>
+            快捷操作
+          </h3>
+          <div className="grid grid-cols-2 gap-3 h-full">
+            <button className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-md hover:shadow-blue-500/10 transition-all group duration-300">
+                <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-100 group-hover:scale-110 transition-transform duration-300 text-slate-400 group-hover:text-blue-600 group-hover:border-blue-100">
                     <ArrowUpRight className="w-5 h-5" />
                 </div>
-                <span className="font-medium">记账</span>
+                <span className="font-bold text-sm text-slate-600 group-hover:text-blue-600 transition-colors">记一笔</span>
             </button>
-            <button className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-slate-700/50 hover:bg-indigo-600 hover:text-white transition-all group">
-                <div className="bg-slate-600/50 p-2 rounded-lg group-hover:bg-white/20">
-                    <PieChart className="w-5 h-5" />
+            <button className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/10 transition-all group duration-300">
+                <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-100 group-hover:scale-110 transition-transform duration-300 text-slate-400 group-hover:text-indigo-600 group-hover:border-indigo-100">
+                    <Activity className="w-5 h-5" />
                 </div>
-                <span className="font-medium">分析</span>
+                <span className="font-bold text-sm text-slate-600 group-hover:text-indigo-600 transition-colors">分析</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* 2. Top Positions */}
-      <div
-      >
-        <h2 className="text-xl font-bold text-slate-200 mb-6 flex items-center gap-2">
-            <PieChart className="w-5 h-5 text-blue-500" />
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+            <div className="p-2.5 bg-white border border-slate-200 rounded-xl text-blue-600 shadow-sm">
+                <PieChart className="w-5 h-5" />
+            </div>
             重仓基金表现
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {holdings?.map((fund, index) => (
-                <div key={fund.code} className="bg-slate-800/40 backdrop-blur border border-slate-700/50 rounded-2xl p-5 hover:bg-slate-800/60 transition-colors group">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <div className="font-bold text-lg text-slate-200 group-hover:text-blue-400 transition-colors truncate max-w-[180px]">
+                <div 
+                    key={fund.code} 
+                    className="bg-white/90 backdrop-blur-sm border border-white/50 rounded-[1.5rem] p-6 shadow-lg shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50/50 rounded-full -translate-y-16 translate-x-12 group-hover:bg-blue-50/50 transition-colors duration-500"></div>
+
+                    <div className="flex justify-between items-start mb-6 relative z-10">
+                        <div className="flex-1 mr-4">
+                            <div className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors truncate">
                                 {fund.name}
                             </div>
-                            <div className="text-xs text-slate-500 font-mono">{fund.code}</div>
+                            <div className="flex items-center gap-2 mt-1.5">
+                                <span className="bg-slate-100 text-slate-500 text-xs px-2 py-0.5 rounded-md font-mono font-medium group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                    {fund.code}
+                                </span>
+                            </div>
                         </div>
-                        <div className={`text-lg font-bold ${fund.estRate >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className={`text-xl font-bold ${fund.estRate >= 0 ? 'text-rose-500 bg-rose-50 border border-rose-100' : 'text-emerald-500 bg-emerald-50 border border-emerald-100'} px-3 py-1.5 rounded-xl transition-colors`}>
                             {fund.estRate > 0 ? '+' : ''}{fund.estRate}%
                         </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <div className="text-slate-500 text-xs mb-1">持仓金额</div>
-                            <div className="font-medium text-slate-300">¥{fund.marketValue?.toLocaleString()}</div>
+                    <div className="grid grid-cols-2 gap-4 text-xs relative z-10">
+                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-white group-hover:border-blue-100 group-hover:shadow-sm transition-all">
+                            <div className="text-slate-500 mb-1 font-medium">持仓金额</div>
+                            <div className="font-bold text-slate-900 text-base">¥{fund.marketValue?.toLocaleString()}</div>
                         </div>
-                        <div className="text-right">
-                             <div className="text-slate-500 text-xs mb-1">持有收益</div>
-                             <div className={`font-medium ${fund.totalReturn >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 group-hover:bg-white group-hover:border-blue-100 group-hover:shadow-sm transition-all text-right">
+                             <div className="text-slate-500 mb-1 font-medium">持有收益</div>
+                             <div className={`font-bold text-base ${fund.totalReturn >= 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
                                 {fund.totalReturn > 0 ? '+' : ''}{fund.totalReturn?.toFixed(2)}%
                              </div>
                         </div>

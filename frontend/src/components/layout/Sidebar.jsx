@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Clock from '../common/Clock';
 
-export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, isAdmin, logout }) {
+export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, isAdmin, logout, isOpen, onClose }) {
   const menuItems = [
     { id: 'dashboard', label: '仪表盘', icon: LayoutGrid },
     { id: 'list', label: '基金市场', icon: TrendingUp },
@@ -25,17 +25,19 @@ export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, 
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-slate-900/50 backdrop-blur-xl border-r border-slate-700/50 z-50 flex flex-col">
+    <aside className={`fixed left-0 top-0 h-screen w-64 bg-white/80 backdrop-blur-xl border-r border-slate-200/50 z-50 flex flex-col transition-transform duration-300 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+    }`}>
       {/* Logo Area */}
       <div className="p-6 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
           <Wallet className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500">
             FundVal
           </h1>
-          <p className="text-xs text-slate-500 tracking-wider">LIVE MONITOR</p>
+          <p className="text-xs text-slate-400 tracking-wider">LIVE MONITOR</p>
         </div>
       </div>
 
@@ -46,11 +48,14 @@ export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, 
           return (
             <button
               key={item.id}
-              onClick={() => setCurrentView(item.id)}
+              onClick={() => {
+                  setCurrentView(item.id);
+                  if (onClose) onClose(); // Close on mobile select
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden ${
                 isActive 
-                  ? 'bg-blue-600/10 text-blue-400 shadow-[0_0_20px_-5px_rgba(59,130,246,0.5)] border border-blue-500/20' 
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
+                  ? 'bg-blue-50 text-blue-600 shadow-sm border border-blue-100' 
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
       {isActive && (
@@ -58,7 +63,7 @@ export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, 
                   className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full"
                 />
               )}
-              <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+              <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
               <span className="font-medium">{item.label}</span>
             </button>
           );
@@ -66,10 +71,10 @@ export default function Sidebar({ currentView, setCurrentView, isMultiUserMode, 
       </nav>
 
       {/* User Area */}
-      <div className="p-4 border-t border-slate-800/50">
+      <div className="p-4 border-t border-slate-100">
         <button 
           onClick={logout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-900/10 transition-colors group"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors group"
         >
           <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
           <span className="font-medium">退出登录</span>

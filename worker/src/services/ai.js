@@ -37,9 +37,9 @@ export class AIService {
     }
 
     return {
-      apiBase: settings.OPENAI_API_BASE || 'https://api.openai.com/v1',
-      apiKey: settings.OPENAI_API_KEY || '',
-      model: settings.AI_MODEL_NAME || 'gpt-3.5-turbo',
+      apiBase: env.OPENAI_API_BASE || settings.OPENAI_API_BASE || 'https://api.openai.com/v1',
+      apiKey: env.OPENAI_API_KEY || settings.OPENAI_API_KEY || '',
+      model: env.AI_MODEL_NAME || settings.AI_MODEL_NAME || 'gpt-3.5-turbo',
     };
   }
 

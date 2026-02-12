@@ -104,6 +104,10 @@ auth.get('/registration', async (c) => {
   return c.json({ registration_enabled: enabled });
 });
 
+auth.get('/mode', (c) => {
+  return c.json({ mode: c.env.ENVIRONMENT || 'production' });
+});
+
 auth.post('/login', async (c) => {
   const db = c.env.DB;
   const { username, password } = await c.req.json();

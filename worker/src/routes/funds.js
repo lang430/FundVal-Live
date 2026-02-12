@@ -16,7 +16,7 @@ const funds = new Hono();
 
 // GET /api/search?q=xxx
 funds.get('/search', async (c) => {
-  const q = c.req.query('q');
+  const q = c.req.query('q')?.trim();
   if (!q) return c.json([]);
 
   const results = await searchFunds(c.env.DB, q);

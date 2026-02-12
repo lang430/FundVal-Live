@@ -66,17 +66,23 @@ export default function AiChat({ accountId }) {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-3xl overflow-hidden">
+    <div className="h-[calc(100vh-8rem)] flex flex-col bg-white/80 backdrop-blur-xl border border-white/50 shadow-xl shadow-slate-200/50 rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Chat Header */}
-      <div className="p-4 border-b border-slate-700/50 bg-slate-800/50 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
-            <Bot className="w-6 h-6 text-indigo-400" />
+      <div className="p-4 border-b border-slate-100 bg-white/50 flex items-center gap-3 relative z-10">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Bot className="w-6 h-6 text-white" />
         </div>
         <div>
-            <h2 className="font-bold text-slate-100">AI 投资顾问</h2>
+            <h2 className="font-bold text-slate-800">AI 投资顾问</h2>
             <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span className="text-xs text-slate-400">Online · Powered by OpenAI</span>
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                <span className="text-xs text-slate-500 font-medium">Online · Powered by OpenAI</span>
+            </div>
+        </div>
+        <div className="ml-auto">
+            <div className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold border border-indigo-100 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Pro
             </div>
         </div>
       </div>
@@ -84,25 +90,27 @@ export default function AiChat({ accountId }) {
       {/* Messages */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"
+        className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50/50"
       >
         {messages.map((msg) => (
             <div
                 key={msg.id}
-                className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''} group`}
             >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    msg.role === 'user' ? 'bg-blue-600' : 'bg-indigo-600'
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md ${
+                    msg.role === 'user' 
+                        ? 'bg-blue-600 shadow-blue-500/20' 
+                        : 'bg-white border border-slate-100'
                 }`}>
-                    {msg.role === 'user' ? <User className="w-6 h-6 text-white" /> : <Bot className="w-6 h-6 text-white" />}
+                    {msg.role === 'user' ? <User className="w-5 h-5 text-white" /> : <Bot className="w-5 h-5 text-indigo-600" />}
                 </div>
                 
-                <div className={`max-w-[80%] rounded-2xl p-4 ${
+                <div className={`max-w-[80%] rounded-2xl p-5 shadow-sm ${
                     msg.role === 'user' 
-                        ? 'bg-blue-600/90 text-white rounded-tr-none' 
-                        : 'bg-slate-700/50 text-slate-200 rounded-tl-none border border-slate-600/30'
+                        ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-none shadow-blue-500/20' 
+                        : 'bg-white text-slate-700 rounded-tl-none border border-slate-100 shadow-slate-200/50'
                 }`}>
-                    <div className="prose prose-invert prose-sm max-w-none">
+                    <div className={`prose prose-sm max-w-none ${msg.role === 'user' ? 'prose-invert' : 'prose-slate'}`}>
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                 </div>
@@ -111,39 +119,39 @@ export default function AiChat({ accountId }) {
 
         {loading && (
             <div className="flex gap-4">
-                 <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
-                    <Bot className="w-6 h-6 text-white" />
+                 <div className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-md">
+                    <Bot className="w-5 h-5 text-indigo-600" />
                 </div>
-                <div className="bg-slate-700/50 rounded-2xl rounded-tl-none p-4 flex items-center gap-1">
-                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></span>
-                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200"></span>
+                <div className="bg-white rounded-2xl rounded-tl-none p-4 flex items-center gap-1 shadow-sm border border-slate-100">
+                    <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></span>
+                    <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-100"></span>
+                    <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-200"></span>
                 </div>
             </div>
         )}
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-slate-800/50 border-t border-slate-700/50">
-        <div className="relative max-w-4xl mx-auto">
+      <div className="p-4 bg-white border-t border-slate-100 relative z-10">
+        <div className="relative max-w-4xl mx-auto shadow-lg shadow-slate-200/50 rounded-2xl">
             <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="输入你的问题，例如：分析一下当前的半导体行情..."
-                className="w-full bg-slate-900/50 border border-slate-600/50 rounded-xl pl-4 pr-12 py-4 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium"
+                className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-14 py-4 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
                 disabled={loading}
             />
             <button 
                 onClick={handleSend}
                 disabled={!input.trim() || loading}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-indigo-500/30 active:scale-95"
             >
                 {loading ? <Sparkles className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </button>
         </div>
-        <p className="text-center text-xs text-slate-500 mt-2">
+        <p className="text-center text-xs text-slate-400 mt-3 font-medium">
             AI 输出内容仅供参考，不作为投资建议。
         </p>
       </div>

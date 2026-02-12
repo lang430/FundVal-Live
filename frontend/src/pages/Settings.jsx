@@ -284,11 +284,21 @@ export default function Settings() {
         </div>
       )}
 
-      {/* AI Configuration */}
-      <AISettings settings={settings} errors={errors} onChange={handleChange} />
-
-      {/* Email Configuration */}
-      <EmailSettings settings={settings} errors={errors} onChange={handleChange} />
+      {/* Configuration controlled by System Environment Variables */}
+      {/* <AISettings settings={settings} errors={errors} onChange={handleChange} /> */}
+      {/* <EmailSettings settings={settings} errors={errors} onChange={handleChange} /> */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+        <div className="p-2 bg-blue-100 rounded-lg">
+            <Key className="w-5 h-5 text-blue-600" />
+        </div>
+        <div>
+            <h3 className="font-medium text-blue-900">系统配置已托管</h3>
+            <p className="text-sm text-blue-700 mt-1">
+                AI 模型与邮件服务配置已移至云端环境变量统一管理 (Cloudflare Worker Secrets)。
+                如需修改，请联系系统管理员或在 Cloudflare 控制台进行配置。
+            </p>
+        </div>
+      </div>
 
       {/* AI Prompts Management */}
       <PromptManagement

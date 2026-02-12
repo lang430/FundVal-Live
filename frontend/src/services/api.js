@@ -87,7 +87,7 @@ export const getAccountPositions = async (accountId) => {
             return response.data;
         }
 
-        const response = await api.get('/account/positions', { params: { account_id: accountId } });
+        const response = await api.get('/positions', { params: { account_id: accountId } });
         return response.data;
     } catch (error) {
         console.error("Get positions failed", error);
@@ -96,32 +96,30 @@ export const getAccountPositions = async (accountId) => {
 };
 
 export const updatePosition = async (data, accountId) => {
-    return api.post('/account/positions', data, { params: { account_id: accountId } });
+    return api.post('/positions', data, { params: { account_id: accountId } });
 };
 
 export const deletePosition = async (code, accountId) => {
-    return api.delete(`/account/positions/${code}`, { params: { account_id: accountId } });
+    return api.delete(`/positions/${code}`, { params: { account_id: accountId } });
 };
 
 export const addPositionTrade = async (code, data, accountId) => {
-    const response = await api.post(`/account/positions/${code}/add`, data, { params: { account_id: accountId } });
-    return response.data;
+    return api.post(`/trade/${code}/buy`, data, { params: { account_id: accountId } });
 };
 
 export const reducePositionTrade = async (code, data, accountId) => {
-    const response = await api.post(`/account/positions/${code}/reduce`, data, { params: { account_id: accountId } });
-    return response.data;
+    return api.post(`/trade/${code}/sell`, data, { params: { account_id: accountId } });
 };
 
 export const getTransactions = async (accountId, code = null, limit = 100) => {
     const params = { account_id: accountId, limit };
     if (code) params.code = code;
-    const response = await api.get('/account/transactions', { params });
+    const response = await api.get('/transactions', { params });
     return response.data.transactions || [];
 };
 
 export const updatePositionsNav = async (accountId) => {
-    return api.post('/account/positions/update-nav', null, { params: { account_id: accountId } });
+    return api.post('/positions/update-nav', null, { params: { account_id: accountId } });
 };
 
 // AI Prompts management
