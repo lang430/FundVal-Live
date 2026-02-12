@@ -1,0 +1,19 @@
+{
+  "name": "fundval-live-worker",
+  "version": "1.2.8",
+  "description": "FundVal Live - Cloudflare Workers Edition",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create fundval-live-db",
+    "db:init": "wrangler d1 execute fundval-live-db --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute fundval-live-db --local --file=./schema.sql"
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
